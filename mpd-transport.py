@@ -25,7 +25,7 @@ CHANNEL_TO_SERVER = {
 
 ALLOWED_COMMANDS = {
     'next': lambda c: c.next(),
-    'pause': lambda c: c.pause(0),
+    'pause': lambda c: c.pause(1),
     'play': lambda c: c.play(),
     'prev': lambda c: c.previous(),
     #'random',
