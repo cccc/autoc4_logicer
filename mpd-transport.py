@@ -163,6 +163,7 @@ class MPD_idler(Thread):
             song = song_obj['file']
         else:
             song = '{artist} - {album} - {title}'.format(**song_obj)
+        song = song.encode('utf-8') # ARGH!!!!!!!!!!!!!!!!!!!!!!! Isn't this python3?
         if self.current_song != song:
             self.current_song = song
             self.mqtt_thread.mqtt_client.publish(self.mqtt_topic_prefix + '/song', song, retain=True)
