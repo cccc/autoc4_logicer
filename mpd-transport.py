@@ -166,12 +166,12 @@ class MPD_idler(Thread):
         song = song.encode('utf-8') # ARGH!!!!!!!!!!!!!!!!!!!!!!! Isn't this python3?
         if self.current_song != song:
             self.current_song = song
-            self.mqtt_thread.mqtt_client.publish(self.mqtt_topic_prefix + '/song', song, retain=True)
+            self.mqtt_thread.mqtt_client.publish(self.mqtt_topic_prefix + '/song', song, retain=True, qos=0)
             #with publish_lock:
             #    publish_queue.append((self.mqtt_topic_prefix + '/song', song))
         if self.current_state != state:
             self.current_state = state
-            self.mqtt_thread.mqtt_client.publish(self.mqtt_topic_prefix + '/state', state, retain=True)
+            self.mqtt_thread.mqtt_client.publish(self.mqtt_topic_prefix + '/state', state, retain=True, qos=0)
 
 
 def set_log_level(loglevel):
