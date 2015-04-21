@@ -157,7 +157,7 @@ class MPD_idler(Thread):
 
     def publish_new_state(self):
         state = self.client.status()['state']
-        song_obj = { 'artist': 'unknown', 'title': 'unknown', 'album': 'unknown' } # set default values
+        song_obj = { 'artist': 'unknown', 'title': 'unknown', 'album': 'unknown', 'file': '' } # set default values
         song_obj.update(self.client.currentsong())
         if song_obj['artist'] == song_obj['title'] == song_obj['album'] == 'unknown':
             song = song_obj['file']
