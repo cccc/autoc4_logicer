@@ -13,9 +13,12 @@ sys.path.append('/home/autoc4/.pyenv/versions/3.4.0/lib/python3.4/site-packages/
 from subprocess import Popen
 from paho.mqtt import client as mqtt_client
 from mpd import MPDClient
+import mpd
 #from thread import Lock
 from threading import Thread
 import re
+import time
+import socket
 
 CHANNEL_TO_SERVER = {
     # topic_part: (mpd_server_name, mpd_server_port, mpd_topic_prefix)
@@ -133,6 +136,7 @@ class MPD_idler(Thread):
         self.server_port = server_port
         self.mqtt_topic_prefix = mqtt_topic_prefix
         self.mqtt_thread = mqtt_thread
+        self.retry_timeout = 5
     
     def request_stop(self):
         self.should_stop = True
@@ -141,17 +145,39 @@ class MPD_idler(Thread):
         self.client = MPDClient()
         self.client.timeout = 10
         self.client.idletimeout = None
-        self.client.connect(self.server_name, self.server_port)
+        self.connect()
         #print(self.client.mpd_version)
         while not self.should_stop:
-            logging.debug('idle_return ({server}:{port}): {ret}'.format(
-                    server=self.server_name,
-                    port=self.server_port,
-                    ret=str(self.client.idle('mixer', 'player')))
-                )
-            self.got_event()
+            try:
+                logging.debug('idle_return ({server}:{port}): {ret}'.format(
+                        server=self.server_name,
+                        port=self.server_port,
+                        ret=str(self.client.idle('mixer', 'player')))
+                    )
+                self.got_event()
+            except (mpd.ConnectionError, TimeoutError, ConnectionResetError):
+                logging.info('Connection lost ({}), reconnecting ...'.format(self.mqtt_topic_prefix))
+                self.connect()
         self.client.close()
         self.client.disconnect()
+
+    def connect(self):
+        while True:
+            try:
+                self.client.connect(self.server_name, self.server_port)
+                self.retry_timeout = 5
+                logging.info('Connected to ({})'.format(self.mqtt_topic_prefix))
+                self.publish_new_state()
+                return
+            except (ConnectionRefusedError, socket.timeout, mpd.ConnectionError, OSError):
+                logging.info('Connecting failed ({}), retrying in {} ...'.format(self.mqtt_topic_prefix, self.retry_timeout))
+                try:
+                    self.client.disconnect() # got ConnectionError("Already connected") once...
+                except mpd.ConnectionError:
+                    pass
+                time.sleep(self.retry_timeout)
+                if self.retry_timeout < 3600: # max 1 hour
+                    self.retry_timeout *= 2
 
     def got_event(self):
         self.publish_new_state()
