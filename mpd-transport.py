@@ -220,6 +220,9 @@ def main():
     mqtt_thread.start()
     mpd_threads = []
 
+    # wait for mqtt thread to start, connect, ...
+    time.sleep(1)
+
     for channel, (server, port, mqtt_prefix) in CHANNEL_TO_SERVER.items():
         logging.info('starting mpd idler for {server}:{port}'.format(server=server, port=port))
         t = MPD_idler(server, port, mqtt_prefix, mqtt_thread)
