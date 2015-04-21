@@ -44,7 +44,10 @@ class MQTTLogicer(object):
         'licht/plenar/hintenfenster',
         'licht/plenar/hintenwand',
     ]
-    alle_lichter = fnordcenter_lichter + keller_lichter + wohnzimmer_lichter + plenarsaal_lichter
+    powers = [
+        'power/wohnzimmer/kitchenlight',
+    ]
+    alle_lichter = fnordcenter_lichter + keller_lichter + wohnzimmer_lichter + plenarsaal_lichter + powers
     exit_light = 'licht/wohnzimmer/tuer'
 
     fenster_to_licht = {
@@ -61,16 +64,26 @@ class MQTTLogicer(object):
     musiken = [
         'mpd/plenar',
         'mpd/fnord',
+        'mpd/baellebad',
     ]
 
-    dmx_channels = [
+    dmx_channels_fnordcenter = [
         'dmx/fnord/fairyfenster',
         'dmx/fnord/schranklinks',
         'dmx/fnord/schrankrechts',
         'dmx/fnord/scummfenster',
+    ]
+    dmx_channels_wohnzimmer = [
         'dmx/wohnzimmer/mitte1',
         'dmx/wohnzimmer/mitte2',
         'dmx/wohnzimmer/mitte3',
+        'dmx/wohnzimmer/tuer1',
+        'dmx/wohnzimmer/tuer2',
+        'dmx/wohnzimmer/tuer3',
+        'dmx/wohnzimmer/gang',
+        'dmx/wohnzimmer/baellebad',
+    ]
+    dmx_channels_plenarsaal = [
         'dmx/plenar/vorne1',
         'dmx/plenar/vorne2',
         'dmx/plenar/vorne3',
@@ -79,6 +92,7 @@ class MQTTLogicer(object):
         'dmx/plenar/hinten3',
         'dmx/plenar/hinten4',
     ]
+    dmx_channels = dmx_channels_fnordcenter + dmx_channels_wohnzimmer + dmx_channels_plenarsaal
 
     last_state = None
 
