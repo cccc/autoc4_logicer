@@ -14,7 +14,7 @@ Implements logic for the MQTT-based home automation. This includes:
 import logging
 import sys
 sys.path.append('/home/autoc4/.pyenv/versions/3.4.0/lib/python3.4/site-packages/')
-from subprocess import call
+from subprocess import Popen
 from paho.mqtt import client as mqtt_client
 import re
 
@@ -189,7 +189,7 @@ class MQTTLogicer(object):
 
             #endpoint = TCP4ClientEndpoint(reactor, 'chat.freenode.net', 6667)
             #d = endpoint.connect(BotFactory('c4status', status))
-            call(['/usr/bin/python2.7', '/home/autoc4/logicer/irc_topicer.py', status])
+            Popen(['/usr/bin/python2.7', '/home/autoc4/logicer/irc_topicer.py', status])
 
 
     def value_changed(self, topic, new_value):
@@ -229,7 +229,7 @@ class MQTTLogicer(object):
 
             #endpoint = TCP4ClientEndpoint(reactor, 'chat.freenode.net', 6667)
             #d = endpoint.connect(BotFactory('c4status', status))
-            call(['/usr/bin/python2.7', '/home/autoc4/logicer/irc_topicer.py', status])
+            Popen(['/usr/bin/python2.7', '/home/autoc4/logicer/irc_topicer.py', status])
 
 
     def got_publish(self, topic, payload, retain):
