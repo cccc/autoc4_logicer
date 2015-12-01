@@ -159,6 +159,7 @@ class MQTTLogicer(object):
                     ('club/status',   0),
                     ('club/shutdown', 0),
                     ('club/gate',     0),
+                    ('club/bell',     0),
                     #('temp/+/+',     0),
                 ]:
                 self.mqtt_client.subscribe(*t)
@@ -230,6 +231,11 @@ class MQTTLogicer(object):
         if topic == 'schalter/fnord/vorne':
             logging.debug('toggling fnordcenter')
             self.toggle_room_lights(self.fnordcenter_lichter)
+
+        if topic == 'club/bell' and new_value == b'\x00':
+            if self.last_state['club/status'] == b'\x01':
+                logging.debug('bell received, opening door')
+                self.mqtt_client.publish('club/gate', b'')
 
         if topic == 'club/status':
             logging.debug('toggling irc topic')
