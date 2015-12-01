@@ -16,6 +16,10 @@ import sys
 sys.path.append('/home/autoc4/.pyenv/versions/3.4.0/lib/python3.4/site-packages/')
 from subprocess import Popen
 from paho.mqtt import client as mqtt_client
+from threading import Thread
+from datetime import datetime
+import time
+import struct
 import re
 
 
@@ -119,6 +123,8 @@ class MQTTLogicer(object):
         self.last_state = {}
         #self.last_state = { s: None for s in self.plenarsaal_lichter + self.wohnzimmer_lichter + self.keller_licht }
 
+        self.timethread = None
+
     def run(self):
         self.mqtt_client = mqtt_client.Client(self.clientId)
         self.mqtt_client.on_message = self.publishReceived
@@ -129,7 +135,12 @@ class MQTTLogicer(object):
         #self.mqtt_client.on_log = on_log
         logging.info('connecting')
         self.mqtt_client.connect('127.0.0.1', 1883, self.keepalive)
+
+        self.timethread = MQTT_Time_Thread(self.mqtt_client)
+        self.timethread.start()
+
         self.mqtt_client.loop_forever()
+
         logging.info('leaving program loop')
 
     def on_connect(self, mosq, obj, rc):
@@ -359,6 +370,35 @@ class MQTTLogicer(object):
             logging.debug('turning lights on')
             for t in room_lights:
                 self.mqtt_client.publish(t, b'\x01', retain=True)
+
+
+class MQTT_Time_Thread(Thread):
+    """
+    Publishes the current time in regular intervals.
+    """
+
+    interval = 60
+    topic = 'time'
+
+    def __init__(self, mqtt_client, *args, **kwargs):
+        super(MQTT_Time_Thread, self).__init__(*args, **kwargs)
+        self.mqtt_client = mqtt_client
+
+    def run(self):
+        while True:
+            t = datetime.now()
+            data = struct.pack('<BBBBBBBB',
+                t.hour,
+                t.minute,
+                t.second,
+                0,
+                t.weekday() + 1,
+                t.month,
+                t.day,
+                t.year % 100,
+                )
+            self.mqtt_client.publish(self.topic, data)
+            time.sleep(self.interval)
 
 
 def set_log_level(loglevel):
