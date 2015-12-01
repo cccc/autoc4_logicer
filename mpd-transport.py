@@ -155,7 +155,7 @@ class MPD_idler(Thread):
                         ret=str(self.client.idle('mixer', 'player')))
                     )
                 self.got_event()
-            except (mpd.ConnectionError, TimeoutError, ConnectionResetError):
+            except (mpd.ConnectionError, TimeoutError, ConnectionResetError, OSError):
                 logging.info('Connection lost ({}), reconnecting ...'.format(self.mqtt_topic_prefix))
                 self.connect()
         self.client.close()
