@@ -302,9 +302,10 @@ class MQTTLogicer(object):
                 return
 
             logging.debug('shutdown')
-            # turn off music
+            # turn off music and reset outputs
             for t in self.musiken:
                 self.mqtt_client.publish(t+'/control', 'stop')
+                self.mqtt_client.publish(t+'/control', 'resetoutputs')
             # turn off dmx lights
             for t in self.dmx_channels:
                 self.mqtt_client.publish(t, b'\x00'*8, retain=True)

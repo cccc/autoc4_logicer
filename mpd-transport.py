@@ -37,11 +37,47 @@ ALLOWED_COMMANDS = {
     #'repeat',
     #'single',
     #'consume',
+    'resetoutputs': lambda c: reset_outputs(c),
     'shuffle': lambda c: c.shuffle(),
     'stop': lambda c: c.stop(),
     'toggle': lambda c: c.pause(),
     'update': lambda c: c.update(),
 }
+
+
+def reset_outputs(client):
+    outputs = client.outputs()
+
+    if not outputs:
+        # no outputs, fail silently
+        return
+
+    # find local output
+    # first try by name 'local'
+    # then by id '0'
+    # then just use the first output returned by client.outputs()
+
+    templ = [o for o in outputs if o['outputname']=='local']
+    if templ:
+        local_output = templ[0]
+    else:
+        templ = [o for o in outputs if o['outputid']=='0']
+        if templ:
+            local_output = templ[0]
+        else:
+            local_output = outputs[0]
+
+    # enable local output
+    if local_output['outputenabled'] == '0':
+        client.enableoutput(local_output['outputid'])
+
+    nonlocal_outputs = (o for o in outputs if o != local_output)
+
+    # disable other outputs
+    for o in nonlocal_outputs:
+        if o['outputenabled'] == '1':
+            client.disableoutput(o['outputid'])
+
 
 class MQTT_mpd_transport(Thread):
     """
