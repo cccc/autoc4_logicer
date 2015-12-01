@@ -1,0 +1,53 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:          twisted-wsforwarder
+# Required-Start:    $local_fs $remote_fs $network $syslog
+# Required-Stop:     $local_fs $remote_fs $network $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: starts twisted-wsforwarder
+# Description:       starts twisted-wsforwarder
+### END INIT INFO
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+
+pidfile=/var/run/twisted-wsforwarder rundir=/var/lib/twisted-wsforwarder/ logfile=/var/log/twisted-wsforwarder.log
+
+[ -r /etc/default/twisted-wsforwarder ] && . /etc/default/twisted-wsforwarder
+
+test -x /usr/bin/twistd || exit 0
+#test -r $file || exit 0
+#test -r /usr/share/twisted-logicer/package-installed || exit 0
+
+
+case "$1" in
+    start)
+        echo -n "Starting twisted-wsforwarder: twistd"
+        start-stop-daemon --start --quiet --exec /usr/bin/twistd --    --pidfile=$pidfile --rundir=$rundir --logfile=$logfile endpointforward --endpoint "autobahn:tcp\:9000:url=ws\://localhost\:9000:subprotocol=mqttv3.1" --dest_endpoint="tcp:127.0.0.1:1883"
+        echo "."
+    ;;
+
+    stop)
+        echo -n "Stopping twisted-wsforwarder: twistd"
+        start-stop-daemon --stop --quiet     --pidfile $pidfile
+        echo "."
+    ;;
+
+    restart)
+        $0 stop
+        $0 start
+    ;;
+
+    force-reload)
+        $0 restart
+    ;;
+
+    *)
+        echo "Usage: /etc/init.d/twisted-wsforwarder {start|stop|restart|force-reload}" >&2
+        exit 1
+    ;;
+esac
+
+exit 0
+twistd -n endpointforward --endpoint "autobahn:tcp\:9000:url=ws\://localhost\:9000:subprotocol=mqttv3.1" --dest_endpoint="tcp:127.0.0.1:1883"
