@@ -31,6 +31,7 @@ class MQTTLogicer(object):
     keller_lichter = [
         'licht/keller/aussen',
         'licht/keller/innen',
+        'licht/keller/vorne',
     ]
     wohnzimmer_lichter = [
         'licht/wohnzimmer/kueche',
