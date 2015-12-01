@@ -25,6 +25,7 @@ CHANNEL_TO_SERVER = {
     'plenar': ('eeetop', 6600, 'mpd/plenar'),
     'fnord': ('trillian', 6600, 'mpd/fnord'),
     'baellebad': ('autoc4', 6600, 'mpd/baellebad'),
+    'keller': ('eeepc', 6600, 'mpd/keller'),
 }
 
 ALLOWED_COMMANDS = {

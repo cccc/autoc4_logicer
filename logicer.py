@@ -66,6 +66,7 @@ class MQTTLogicer(object):
         'mpd/plenar',
         'mpd/fnord',
         'mpd/baellebad',
+        'mpd/keller',
     ]
 
     dmx_channels_fnordcenter = [
