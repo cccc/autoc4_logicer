@@ -103,7 +103,7 @@ class MQTTLogicer(object):
     last_state = None
 
     def __init__(self, clientId=None, keepalive=None, willQos=0,
-                 willTopic=None, willMessage=None, willRetain=False):
+                 willTopic='heartbeat/logicer', willMessage=b'\x00', willRetain=True):
 
         if clientId is not None:
             self.clientId = clientId
@@ -131,6 +131,7 @@ class MQTTLogicer(object):
         self.mqtt_client.on_connect = self.on_connect
         #self.mqtt_client.on_publish = on_publish
         #self.mqtt_client.on_subscribe = self.on_subscribe
+        self.mqtt_client.will_set(self.willTopic, bytearray(self.willMessage), self.willQos, self.willRetain)
         # Uncomment to enable debug messages
         #self.mqtt_client.on_log = on_log
         logging.info('connecting')
@@ -160,9 +161,12 @@ class MQTTLogicer(object):
                     ('club/shutdown', 0),
                     ('club/gate',     0),
                     ('club/bell',     0),
+                    ('heartbeat/+',   0),
                     #('temp/+/+',     0),
                 ]:
                 self.mqtt_client.subscribe(*t)
+            logging.info('sending heartbeat')
+            self.mqtt_client.publish('heartbeat/logicer', b'\x01', retain=True)
 
     def publishReceived(self, mosq, obj, msg):
         #if msg.topic.startswith('temp/kuehlschrank/'):
@@ -301,6 +305,11 @@ class MQTTLogicer(object):
                 return
 
             self.preset(topic, payload)
+
+
+        match = re.match(r'^heartbeat/(.*)$', topic)
+        if match:
+            logging.debug('heartbeat ' + match.group(1) + ": " + str(payload))
 
 
         if topic == 'club/shutdown':
