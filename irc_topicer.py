@@ -15,6 +15,7 @@ from datetime import datetime
 import re
 import sys
 import time
+
 import config
 
 class Bot(irc.IRCClient):
@@ -25,7 +26,7 @@ class Bot(irc.IRCClient):
 
     def signedOn(self):
         self.setNick(self.nickname)
-        self.msg("NickServ", "identify c4status {}".format(config.password))
+        self.msg("NickServ", "identify c4status {}".format(config.irc_password))
         print("Bot online with nickname: %s" % (self.nickname,)) #DEBUG
 
     def noticed(self, sender, recipient, msg):
