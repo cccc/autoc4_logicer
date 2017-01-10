@@ -21,6 +21,9 @@ from datetime import datetime
 import time
 import struct
 import re
+import urllib.request
+
+import config
 
 
 class MQTTLogicer(object):
@@ -197,17 +200,7 @@ class MQTTLogicer(object):
             self.mqtt_client.publish('club/status', value, retain=True)
 
         if topic == 'club/status':
-            logging.debug('setting irc topic')
-            # publish to irc topic ?
-
-            if value != b'\x00':
-                status = 'open'
-            else:
-                status = 'closed'
-
-            #endpoint = TCP4ClientEndpoint(reactor, 'chat.freenode.net', 6667)
-            #d = endpoint.connect(BotFactory('c4status', status))
-            Popen(['/usr/bin/python2.7', '/home/autoc4/logicer/irc_topicer.py', status])
+            self.set_club_status(value)
 
 
     def value_changed(self, topic, new_value):
@@ -240,19 +233,11 @@ class MQTTLogicer(object):
             if self.last_state['club/status'] == b'\x01':
                 logging.debug('bell received, opening door')
                 self.mqtt_client.publish('club/gate', b'')
+            else:
+                logging.debug('bell received')
 
         if topic == 'club/status':
-            logging.debug('toggling irc topic')
-            # publish to irc topic ?
-
-            if new_value != b'\x00':
-                status = 'open'
-            else:
-                status = 'closed'
-
-            #endpoint = TCP4ClientEndpoint(reactor, 'chat.freenode.net', 6667)
-            #d = endpoint.connect(BotFactory('c4status', status))
-            Popen(['/usr/bin/python2.7', '/home/autoc4/logicer/irc_topicer.py', status])
+            self.set_club_status(new_value)
 
 
     def got_publish(self, topic, payload, retain):
@@ -386,6 +371,34 @@ class MQTTLogicer(object):
             logging.debug('turning lights on')
             for t in room_lights:
                 self.mqtt_client.publish(t, b'\x01', retain=True)
+
+    def set_club_status(self, value):
+            logging.debug('toggling irc topic')
+            # publish to irc topic ?
+
+            if value != b'\x00':
+                status = 'open'
+            else:
+                status = 'closed'
+
+            #endpoint = TCP4ClientEndpoint(reactor, 'chat.freenode.net', 6667)
+            #d = endpoint.connect(BotFactory('c4status', status))
+            Popen(['/usr/bin/python2.7', '/home/autoc4/logicer/irc_topicer.py', status])
+
+            # forward to webserver (for spaceapi)
+            logging.debug('setting spaceapi open status')
+            try:
+                urllib.request.urlopen(
+                        'https://api.koeln.ccc.de/newstate',
+                        timeout=5,
+                        data='password={secret}&state={state}&message={message}'.format(
+                                secret  = config.spaceapi_password,
+                                state   = status,
+                                message = ''
+                            ).encode()
+                    )
+            except Exception as e:
+                logging.warning('connection to webserver/spaceapi failed: {}'.format(repr(e)))
 
 
 class MQTT_Time_Thread(Thread):
