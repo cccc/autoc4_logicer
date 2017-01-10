@@ -92,6 +92,9 @@ class MQTTLogicer(object):
         'dmx/wohnzimmer/gang',
         'dmx/wohnzimmer/baellebad',
     ]
+    leds_wohnzimmer = [
+        'led/kitchen/sink',
+    ]
     dmx_channels_plenarsaal = [
         'dmx/plenar/vorne1',
         'dmx/plenar/vorne2',
@@ -101,7 +104,7 @@ class MQTTLogicer(object):
         'dmx/plenar/hinten3',
         'dmx/plenar/hinten4',
     ]
-    dmx_channels = dmx_channels_fnordcenter + dmx_channels_wohnzimmer + dmx_channels_plenarsaal
+    dmx_channels = dmx_channels_fnordcenter + dmx_channels_wohnzimmer + dmx_channels_plenarsaal + leds_wohnzimmer
 
     last_state = None
 
