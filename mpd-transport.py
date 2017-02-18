@@ -19,6 +19,7 @@ from threading import Thread
 import re
 import time
 import socket
+import json
 
 CHANNEL_TO_SERVER = {
     # topic_part: (mpd_server_name, mpd_server_port, mpd_topic_prefix)
@@ -220,9 +221,11 @@ class MPD_idler(Thread):
         self.publish_new_state()
 
     def publish_new_state(self):
-        state = self.client.status()['state']
+        status_dict = self.client.status()
+        state = status_dict['state']
+        currentsong_dict = self.client.currentsong()
         song_obj = { 'artist': 'unknown', 'title': 'unknown', 'album': 'unknown', 'file': '' } # set default values
-        song_obj.update(self.client.currentsong())
+        song_obj.update(currentsong_dict)
         if song_obj['artist'] == song_obj['title'] == song_obj['album'] == 'unknown':
             song = song_obj['file']
         else:
@@ -236,6 +239,8 @@ class MPD_idler(Thread):
         if self.current_state != state:
             self.current_state = state
             self.mqtt_thread.mqtt_client.publish(self.mqtt_topic_prefix + '/state', state, retain=True, qos=0)
+        self.mqtt_thread.mqtt_client.publish(self.mqtt_topic_prefix + '/state/json', json.dumps(status_dict), retain=True, qos=0)
+        self.mqtt_thread.mqtt_client.publish(self.mqtt_topic_prefix + '/song/json', json.dumps(currentsong_dict), retain=True, qos=0)
 
 
 def set_log_level(loglevel):
