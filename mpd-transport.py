@@ -7,6 +7,7 @@ Runs an idling thread waiting for events for every configured MPD server and
 another thread subscribed to the MQTT server, listening for commands.
 """
 
+import argparse
 import logging
 import sys
 sys.path.append('/home/autoc4/.pyenv/versions/3.4.0/lib/python3.4/site-packages/')
@@ -20,6 +21,8 @@ import re
 import time
 import socket
 import json
+
+import helpers
 
 CHANNEL_TO_SERVER = {
     # topic_part: (mpd_server_name, mpd_server_port, mpd_topic_prefix)
@@ -246,18 +249,14 @@ class MPD_idler(Thread):
         self.mqtt_thread.mqtt_client.publish(self.mqtt_topic_prefix + '/song/json', json.dumps(currentsong_dict), retain=True, qos=0)
 
 
-def set_log_level(loglevel):
-    # assuming loglevel is bound to the string value obtained from the
-    # command line argument. Convert to upper case to allow the user to
-    # specify --log=DEBUG or --log=debug
-    numeric_level = getattr(logging, loglevel.upper(), None)
-    if not isinstance(numeric_level, int):
-        raise ValueError('Invalid log level: %s' % loglevel)
-    logging.basicConfig(filename='/var/log/mqtt-mpd-transport.log', format='%(asctime)s [%(levelname)s]: %(message)s', level=numeric_level)
-    #logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s', level=numeric_level)
-
 def main():
-    set_log_level('DEBUG')
+    parser = argparse.ArgumentParser(
+            description='MQTT MPD Bridge',
+            parents=[helpers.get_default_parser()],
+        )
+    args = parser.parse_args()
+    helpers.configure_logging(args.logging_type, args.loglevel, args.logfile)
+
     logging.info('starting')
 
     logging.info('starting mqtt-mpd transport')

@@ -11,6 +11,7 @@ Implements logic for the MQTT-based home automation. This includes:
     * room master:          Forwards commands to all lights in a room
 """
 
+import argparse
 import logging
 import sys
 sys.path.append('/home/autoc4/.pyenv/versions/3.4.0/lib/python3.4/site-packages/')
@@ -24,6 +25,7 @@ import re
 import urllib.request
 
 import config
+import helpers
 
 
 class MQTTLogicer(object):
@@ -433,18 +435,14 @@ class MQTT_Time_Thread(Thread):
             time.sleep(self.interval)
 
 
-def set_log_level(loglevel):
-    # assuming loglevel is bound to the string value obtained from the
-    # command line argument. Convert to upper case to allow the user to
-    # specify --log=DEBUG or --log=debug
-    numeric_level = getattr(logging, loglevel.upper(), None)
-    if not isinstance(numeric_level, int):
-        raise ValueError('Invalid log level: %s' % loglevel)
-    logging.basicConfig(filename='/var/log/mqtt-logicer.log', format='%(asctime)s [%(levelname)s]: %(message)s', level=numeric_level)
-    #logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s', level=numeric_level)
-
 def main():
-    set_log_level('DEBUG')
+    parser = argparse.ArgumentParser(
+            description='MQTT MPD Bridge',
+            parents=[helpers.get_default_parser()],
+        )
+    args = parser.parse_args()
+    helpers.configure_logging(args.logging_type, args.loglevel, args.logfile)
+
     logging.info('starting')
     l = MQTTLogicer()
     l.run()
