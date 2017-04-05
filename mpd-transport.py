@@ -95,7 +95,7 @@ class MQTT_mpd_transport(Thread):
     """
 
     def __init__(self, clientId=None, keepalive=None, willQos=0,
-                 willTopic=None, willMessage=None, willRetain=False, *args, **kwargs):
+                 willTopic='heartbeat/mpd-bridge', willMessage=b'\x00', willRetain=True, *args, **kwargs):
         super(MQTT_mpd_transport, self).__init__(*args, **kwargs)
 
         if clientId is not None:
@@ -119,6 +119,7 @@ class MQTT_mpd_transport(Thread):
         self.mqtt_client.on_connect = self.on_connect
         #self.mqtt_client.on_publish = on_publish
         #self.mqtt_client.on_subscribe = self.on_subscribe
+        self.mqtt_client.will_set(self.willTopic, bytearray(self.willMessage), self.willQos, self.willRetain)
         # Uncomment to enable debug messages
         #self.mqtt_client.on_log = on_log
         logging.info('connecting')
@@ -135,6 +136,8 @@ class MQTT_mpd_transport(Thread):
                     ('mpd/+/control', 0),
                 ]:
                 self.mqtt_client.subscribe(*t)
+            logging.info('sending heartbeat')
+            self.mqtt_client.publish('heartbeat/mpd-bridge', b'\x01', retain=True)
 
     def publishReceived(self, mosq, obj, msg):
         match = re.match(r'mpd/(\w+)/control', msg.topic)
