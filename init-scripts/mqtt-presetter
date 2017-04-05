@@ -1,0 +1,50 @@
+#!/bin/sh -e
+
+### BEGIN INIT INFO
+# Provides:          mqtt-presetter
+# Required-Start:    $local_fs $remote_fs $network $syslog
+# Required-Stop:     $local_fs $remote_fs $network $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: starts mqtt-presetter
+# Description:       starts mqtt-presetter
+### END INIT INFO
+
+##. /lib/lsb/init-functions
+
+d_start () {
+##        log_daemon_msg "Starting presetter"
+        su autoc4 -c '/usr/bin/screen -d -m -S presetter -- /bin/bash -c "cd /home/autoc4/presetter && /home/autoc4/.pyenv/shims/python presetd.py"'
+##        log_end_msg $?
+}
+
+d_stop () {
+##        log_daemon_msg "Stopping presetter"
+        pkill --list-full --full --exact "python presetd.py"
+##        log_end_msg $?
+}
+
+case "$1" in
+
+        start|stop)
+                d_${1}
+                ;;
+
+        restart|reload|force-reload)
+                        d_stop
+                        d_start
+                ;;
+
+        force-stop)
+               d_stop
+                ;;
+
+        status)
+                ps aux | grep presetd.py | grep -v grep
+                ;;
+        *)
+                echo "Usage: /etc/init.d/$DEAMON_NAME {start|stop|force-stop|restart|reload|force-reload|status}"
+                exit 1
+                ;;
+esac
+exit 0
