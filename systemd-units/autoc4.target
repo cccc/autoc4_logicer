@@ -1,0 +1,11 @@
+[Unit]
+Description=AutoC4 Suite
+Wants=mosquitto.service
+
+[Install]
+Also=mqtt-logicer.service
+Also=mqtt-mpd-bridge.service
+Also=mqtt-twisted-wsforwarder.service
+Also=mqtt-trafficker.service
+Also=mqtt-presetter.service
+WantedBy=multi-user.target

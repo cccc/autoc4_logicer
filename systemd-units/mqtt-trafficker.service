@@ -1,0 +1,15 @@
+[Unit]
+Description=AutoC4 MQTT Trafficker
+PartOf=autoc4.target
+After=mosquitto.service
+
+[Service]
+Type=simple
+ExecStart=/home/autoc4/.pyenv/shims/python traffic-deamon.py
+WorkingDirectory=/home/autoc4/infoscreen
+User=autoc4
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=autoc4.target

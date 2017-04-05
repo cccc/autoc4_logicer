@@ -1,0 +1,15 @@
+[Unit]
+Description=AutoC4 MQTT Presetter
+PartOf=autoc4.target
+After=mosquitto.service
+
+[Service]
+Type=simple
+ExecStart=/home/autoc4/.pyenv/shims/python presetd.py
+WorkingDirectory=/home/autoc4/presetter
+User=autoc4
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=autoc4.target

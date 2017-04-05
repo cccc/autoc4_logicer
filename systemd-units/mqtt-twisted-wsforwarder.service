@@ -1,0 +1,14 @@
+[Unit]
+Description=MQTT Websocket Forwarder
+PartOf=autoc4.target
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/twistd --syslog --pidfile=/var/run/twisted-wsforwarder.pid --rundir=/var/lib/twisted-wsforwarder/ endpointforward --endpoint "autobahn:tcp\:9000:url=ws\://localhost\:9000:subprotocol=mqttv3.1" --dest_endpoint "tcp:127.0.0.1:1883"
+PIDFile=/var/run/twisted-wsforwarder.pid
+WorkingDirectory=/var/lib/twisted-wsforwarder/
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=autoc4.target
