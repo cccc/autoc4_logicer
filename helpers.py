@@ -1,6 +1,82 @@
 import argparse
 import logging
 from systemd.journal import JournalHandler
+import threading
+from paho.mqtt import client as mqtt_client
+
+
+class MQTT_Client(threading.Thread):
+
+    heartbeat_topic_prefix = 'heartbeat/'
+    subscribe_topics = []
+
+    def __init__(self, clientId=None, mqtt_host='127.0.0.1', mqtt_port=1883, keepalive=60, heartbeat=False):
+        super(MQTT_Client, self).__init__()
+
+        self.clientId = clientId
+        self.mqtt_host = mqtt_host
+        self.mqtt_port = mqtt_port
+        self.keepalive = keepalive
+
+        self.heartbeat = heartbeat
+        self.heartbeat_topic = self.heartbeat_topic_prefix + self.clientId
+
+        if heartbeat:
+            self.willQos = 2
+            self.willTopic = self.heartbeat_topic
+            self.willMessage = b'\x00'
+            self.willRetain = True
+        else:
+            self.willQos = None
+            self.willTopic = None
+            self.willMessage = None
+            self.willRetain = None
+
+        self.mqtt_client = None
+
+        #self.connection_established = threading.Event()
+        self.connection_established = False
+
+    def run(self):
+
+        self.mqtt_client = mqtt_client.Client(self.clientId)
+
+        self.mqtt_client.on_message = self.publishReceived
+        self.mqtt_client.on_connect = self.on_connect
+        #self.mqtt_client.on_publish = on_publish
+        #self.mqtt_client.on_subscribe = self.on_subscribe
+
+        if self.willTopic is not None:
+            self.mqtt_client.will_set(self.willTopic, bytearray(self.willMessage), self.willQos, self.willRetain)
+
+        # Uncomment to enable debug messages
+        #self.mqtt_client.on_log = on_log
+
+        logging.info('connecting')
+        self.mqtt_client.connect(self.mqtt_host, self.mqtt_port, self.keepalive)
+
+        logging.info('looping')
+        self.mqtt_client.loop_forever()
+
+        logging.info('leaving program loop')
+
+    def on_connect(self, mosq, obj, rc):
+
+        if rc != 0:
+            logging.info('could not connect, bad return code')
+
+        else:
+            logging.info('connected, subscribing')
+            self.mqtt_client.subscribe(self.subscribe_topics)
+
+            if self.heartbeat:
+                logging.info('sending heartbeat')
+                self.mqtt_client.publish(self.heartbeat_topic, b'\x01', retain=True)
+
+            self.connection_established = True
+
+    def publishReceived(self, mosq, obj, msg):
+        pass
 
 
 def get_default_parser():

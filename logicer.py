@@ -16,7 +16,6 @@ import logging
 import sys
 sys.path.append('/home/autoc4/.pyenv/versions/3.4.0/lib/python3.4/site-packages/')
 from subprocess import Popen
-from paho.mqtt import client as mqtt_client
 from threading import Thread
 from datetime import datetime
 import time
@@ -28,7 +27,7 @@ import config
 import helpers
 
 
-class MQTTLogicer(object):
+class MQTTLogicer(helpers.MQTT_Client):
     """
     Last received messages for topics are stored in `last_state`.
     """
@@ -110,86 +109,39 @@ class MQTTLogicer(object):
 
     last_state = None
 
-    def __init__(self, clientId=None, keepalive=None, willQos=0,
-                 willTopic='heartbeat/logicer', willMessage=b'\x00', willRetain=True):
+    subscribe_topics = [
+            ('schalter/+/+',  0),
+            ('licht/+/+',     0),
+            ('licht/+',       0),
+            ('fenster/+/+',   0),
+            ('dmx/+/+',       0),
+            ('dmx/+',         0),
+            ('preset/+/+',    0),
+            ('club/status',   0),
+            ('club/shutdown', 0),
+            ('club/gate',     0),
+            ('club/bell',     0),
+            ('heartbeat/+',   0),
+            #('temp/+/+',     0),
+        ]
 
-        if clientId is not None:
-            self.clientId = clientId
-        else:
-            self.clientId = 'Logicer'
-
-        if keepalive is not None:
-            self.keepalive = keepalive
-        else:
-            self.keepalive = 60
-
-        self.willQos = willQos
-        self.willTopic = willTopic
-        self.willMessage = willMessage
-        self.willRetain = willRetain
+    def __init__(self, clientId='logicer', keepalive=60, heartbeat=True):
+        super(MQTTLogicer, self).__init__(clientId, keepalive=keepalive, heartbeat=heartbeat)
 
         self.last_state = {}
-        #self.last_state = { s: None for s in self.plenarsaal_lichter + self.wohnzimmer_lichter + self.keller_licht }
-
-        self.timethread = None
-
-    def run(self):
-        self.mqtt_client = mqtt_client.Client(self.clientId)
-        self.mqtt_client.on_message = self.publishReceived
-        self.mqtt_client.on_connect = self.on_connect
-        #self.mqtt_client.on_publish = on_publish
-        #self.mqtt_client.on_subscribe = self.on_subscribe
-        self.mqtt_client.will_set(self.willTopic, bytearray(self.willMessage), self.willQos, self.willRetain)
-        # Uncomment to enable debug messages
-        #self.mqtt_client.on_log = on_log
-        logging.info('connecting')
-        self.mqtt_client.connect('127.0.0.1', 1883, self.keepalive)
-
-        self.timethread = MQTT_Time_Thread(self.mqtt_client)
-        self.timethread.start()
-
-        self.mqtt_client.loop_forever()
-
-        logging.info('leaving program loop')
-
-    def on_connect(self, mosq, obj, rc):
-        if rc != 0:
-            logging.info('could not connect, bad return code')
-        else:
-            logging.info('connected, subscribing')
-            for t in [
-                    ('schalter/+/+',  0),
-                    ('licht/+/+',     0),
-                    ('licht/+',       0),
-                    ('fenster/+/+',   0),
-                    ('dmx/+/+',       0),
-                    ('dmx/+',         0),
-                    ('preset/+/+',    0),
-                    ('club/status',   0),
-                    ('club/shutdown', 0),
-                    ('club/gate',     0),
-                    ('club/bell',     0),
-                    ('heartbeat/+',   0),
-                    #('temp/+/+',     0),
-                ]:
-                self.mqtt_client.subscribe(*t)
-            logging.info('sending heartbeat')
-            self.mqtt_client.publish('heartbeat/logicer', b'\x01', retain=True)
 
     def publishReceived(self, mosq, obj, msg):
-        #if msg.topic.startswith('temp/kuehlschrank/'):
-        #    import struct
-        #    logging.debug('%s, %f' % (msg.topic, struct.unpack('<f', msg.payload[:4])[0]))
 
         if not msg.topic in self.last_state:
             self.initial_value(msg.topic, msg.payload)
+
         else:
             if msg.payload != self.last_state[msg.topic]:
                 self.value_changed(msg.topic, msg.payload)
+
         self.got_publish(msg.topic, msg.payload, msg.retain)
 
         self.last_state[msg.topic] = msg.payload
-        #logging.debug('setstate {} = {}'.format(msg.topic, repr(msg.payload)))
 
 
     # FROM HERE ON: actual logic
@@ -235,11 +187,13 @@ class MQTTLogicer(object):
             self.toggle_room_lights(self.fnordcenter_lichter)
 
         if topic == 'club/bell' and new_value == b'\x00':
+
             if self.last_state['club/status'] == b'\x01':
                 logging.debug('bell received, opening door')
                 self.mqtt_client.publish('club/gate', b'')
+
             else:
-                logging.debug('bell received')
+                logging.debug('bell off')
 
         if topic == 'club/status':
             self.set_club_status(new_value)
@@ -270,10 +224,12 @@ class MQTTLogicer(object):
                 logging.warning('This should not happen')
                 return
 
+
             if payload in (b'\x00', b'\x01'):
                 logging.debug('switching ' + room)
                 for t in lights:
                     self.mqtt_client.publish(t, payload, retain=True)
+
             else:
                 logging.debug('toggling ' + room)
                 self.toggle_room_lights(lights)
@@ -300,6 +256,9 @@ class MQTTLogicer(object):
         match = re.match(r'^heartbeat/(.*)$', topic)
         if match:
             logging.debug('heartbeat ' + match.group(1) + ": " + str(payload))
+
+        if topic.startswith('schalter/test/1'):
+            logging.debug('test: ' + str(payload))
 
 
         if topic == 'club/shutdown':
@@ -335,6 +294,7 @@ class MQTTLogicer(object):
 
         match = re.match(r'^preset/(fnord|wohnzimmer|plenar|keller)/(on|off)$', topic)
         if match:
+            logging.debug('preset ' + topic)
             room = match.group(1)
             if match.group(2) == 'on':
                 p = b'\x01'
@@ -342,13 +302,18 @@ class MQTTLogicer(object):
                 p = b'\x00'
             self.mqtt_client.publish('licht/' + room, p)
             self.mqtt_client.publish('dmx/' + room + '/master', b'\x00'*8)
+            return
 
 
         match = re.match(r'^preset/(wohnzimmer|plenar)/fade$', topic)
         if match:
+            logging.debug('preset ' + topic)
             room = match.group(1)
             self.mqtt_client.publish('licht/' + room, b'\x00')
             self.mqtt_client.publish('dmx/' + room + '/master', b'\x00\x00\x00\x00\x00\x81\xff')
+            return
+
+        logging.info('unknown preset')
 
 
     def toggle_room_lights(self, room_lights):
@@ -360,25 +325,24 @@ class MQTTLogicer(object):
 
         for t in room_lights:
             if not t in self.last_state:
-                return # strange edge case - i don't know what to do
+                # strange edge case - i don't know what to do
+                logging.warning('Toggling light without known last state, ignoring. ({})'.format(repr(t)))
+                return
 
-        some_light_on = False
-        for t in room_lights:
-            if self.last_state[t] != b'\x00':
-                some_light_on = True
-                break
+        some_light_on = any(self.last_state[t] != b'\x00' for t in room_lights)
 
         if some_light_on:
             logging.debug('turning lights off')
             for t in room_lights:
                 self.mqtt_client.publish(t, b'\x00', retain=True)
+
         else:
             logging.debug('turning lights on')
             for t in room_lights:
                 self.mqtt_client.publish(t, b'\x01', retain=True)
 
     def set_club_status(self, value):
-            logging.debug('toggling irc topic')
+            logging.debug('set club status')
             # publish to irc topic ?
 
             if value != b'\x00':
@@ -386,8 +350,7 @@ class MQTTLogicer(object):
             else:
                 status = 'closed'
 
-            #endpoint = TCP4ClientEndpoint(reactor, 'chat.freenode.net', 6667)
-            #d = endpoint.connect(BotFactory('c4status', status))
+            logging.debug('setting irc topic')
             Popen(['/usr/bin/python2.7', '/home/autoc4/logicer/irc_topicer.py', status])
 
             # forward to webserver (for spaceapi)
@@ -414,11 +377,17 @@ class MQTT_Time_Thread(Thread):
     interval = 60
     topic = 'time'
 
-    def __init__(self, mqtt_client, *args, **kwargs):
+    def __init__(self, logicer, *args, **kwargs):
         super(MQTT_Time_Thread, self).__init__(*args, **kwargs)
-        self.mqtt_client = mqtt_client
+        self.logicer = logicer
 
     def run(self):
+
+        while not self.logicer.connection_established:
+            Thread.sleep(0.1)
+
+        logging.info('thimethread started')
+
         while True:
             t = datetime.now()
             data = struct.pack('<BBBBBBBB',
@@ -431,8 +400,8 @@ class MQTT_Time_Thread(Thread):
                 t.day,
                 t.year % 100,
                 )
-            self.mqtt_client.publish(self.topic, data)
-            time.sleep(self.interval)
+            self.logicer.mqtt_client.publish(self.topic, data)
+            Thread.sleep(self.interval)
 
 
 def main():
@@ -444,9 +413,15 @@ def main():
     helpers.configure_logging(args.logging_type, args.loglevel, args.logfile)
 
     logging.info('starting')
-    l = MQTTLogicer()
-    l.run()
-    logging.info('stopping')
+
+    logicer = MQTTLogicer()
+    logicer.run()
+
+    timethread = MQTT_Time_Thread(logicer)
+    timethread.start()
+
+    logicer.join()
+    timethread.join()
 
 if __name__ == '__main__':
     main()

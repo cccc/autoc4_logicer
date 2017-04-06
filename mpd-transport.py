@@ -18,7 +18,6 @@ import mpd
 #from thread import Lock
 from threading import Thread
 import re
-import time
 import socket
 import json
 
@@ -83,7 +82,7 @@ def reset_outputs(client):
             client.disableoutput(o['outputid'])
 
 
-class MQTT_mpd_transport(Thread):
+class MQTT_mpd_transport(helpers.MQTT_Client):
     """
     MQTT client.
 
@@ -97,58 +96,26 @@ class MQTT_mpd_transport(Thread):
     status updates.
     """
 
-    def __init__(self, clientId=None, keepalive=None, willQos=0,
-                 willTopic='heartbeat/mpd-bridge', willMessage=b'\x00', willRetain=True, *args, **kwargs):
-        super(MQTT_mpd_transport, self).__init__(*args, **kwargs)
+    subscribe_topics = [
+            ('mpd/+/control', 0),
+        ]
 
-        if clientId is not None:
-            self.clientId = clientId
-        else:
-            self.clientId = 'mpd-transport'
-
-        if keepalive is not None:
-            self.keepalive = keepalive
-        else:
-            self.keepalive = 60
-
-        self.willQos = willQos
-        self.willTopic = willTopic
-        self.willMessage = willMessage
-        self.willRetain = willRetain
-
-    def run(self):
-        self.mqtt_client = mqtt_client.Client(self.clientId)
-        self.mqtt_client.on_message = self.publishReceived
-        self.mqtt_client.on_connect = self.on_connect
-        #self.mqtt_client.on_publish = on_publish
-        #self.mqtt_client.on_subscribe = self.on_subscribe
-        self.mqtt_client.will_set(self.willTopic, bytearray(self.willMessage), self.willQos, self.willRetain)
-        # Uncomment to enable debug messages
-        #self.mqtt_client.on_log = on_log
-        logging.info('connecting')
-        self.mqtt_client.connect('127.0.0.1', 1883, self.keepalive)
-        self.mqtt_client.loop_forever()
-        logging.info('leaving program loop')
-
-    def on_connect(self, mosq, obj, rc):
-        if rc != 0:
-            logging.info('could not connect, bad return code')
-        else:
-            logging.info('connected, subscribing')
-            for t in [
-                    ('mpd/+/control', 0),
-                ]:
-                self.mqtt_client.subscribe(*t)
-            logging.info('sending heartbeat')
-            self.mqtt_client.publish('heartbeat/mpd-bridge', b'\x01', retain=True)
+    def __init__(self, clientId='mpd-bridge', keepalive=60, heartbeat=True):
+        super(MQTT_mpd_transport, self).__init__(clientId, keepalive=keepalive, heartbeat=heartbeat)
 
     def publishReceived(self, mosq, obj, msg):
         match = re.match(r'mpd/(\w+)/control', msg.topic)
         
         if match and match.group(1) in CHANNEL_TO_SERVER:
+
             command = msg.payload.decode('utf-8')
-            if command in ALLOWED_COMMANDS:
+
+            if not command in ALLOWED_COMMANDS:
+                logging.info('command not allowed: {}'.format(command))
+
+            else:
                 logging.debug('mpd command: {}'.format(command))
+
                 try:
                     server, port, mqtt_prefix = CHANNEL_TO_SERVER[match.group(1)]
                     c = MPDClient()
@@ -158,6 +125,7 @@ class MQTT_mpd_transport(Thread):
                     ALLOWED_COMMANDS[command](c)
                     c.close()
                     c.disconnect()
+
                 except:
                     logging.error('error while sending mpd command ({server}:{port} {command})'.format(server=server, port=port, command=command))
 
@@ -191,7 +159,9 @@ class MPD_idler(Thread):
         self.client.idletimeout = None
         self.connect()
         #print(self.client.mpd_version)
+
         while not self.should_stop:
+
             try:
                 logging.debug('idle_return ({server}:{port}): {ret}'.format(
                         server=self.server_name,
@@ -199,27 +169,36 @@ class MPD_idler(Thread):
                         ret=str(self.client.idle('mixer', 'player')))
                     )
                 self.got_event()
+
             except (mpd.ConnectionError, TimeoutError, ConnectionResetError, OSError):
                 logging.info('Connection lost ({}), reconnecting ...'.format(self.mqtt_topic_prefix))
                 self.connect()
+
         self.client.close()
         self.client.disconnect()
 
     def connect(self):
+
         while True:
+
             try:
                 self.client.connect(self.server_name, self.server_port)
                 self.retry_timeout = 5
                 logging.info('Connected to ({})'.format(self.mqtt_topic_prefix))
                 self.publish_new_state()
                 return
+
             except (ConnectionRefusedError, socket.timeout, mpd.ConnectionError, OSError):
+
                 logging.info('Connecting failed ({}), retrying in {} ...'.format(self.mqtt_topic_prefix, self.retry_timeout))
+
                 try:
                     self.client.disconnect() # got ConnectionError("Already connected") once...
                 except mpd.ConnectionError:
                     pass
-                time.sleep(self.retry_timeout)
+
+                Thread.sleep(self.retry_timeout)
+
                 if self.retry_timeout < 3600: # max 1 hour
                     self.retry_timeout *= 2
 
@@ -227,24 +206,31 @@ class MPD_idler(Thread):
         self.publish_new_state()
 
     def publish_new_state(self):
+
         status_dict = self.client.status()
         state = status_dict['state']
         currentsong_dict = self.client.currentsong()
         song_obj = { 'artist': 'unknown', 'title': 'unknown', 'album': 'unknown', 'file': '' } # set default values
         song_obj.update(currentsong_dict)
+
         if song_obj['artist'] == song_obj['title'] == song_obj['album'] == 'unknown':
             song = song_obj['file']
         else:
             song = '{artist} - {album} - {title}'.format(**song_obj)
+
         song = song.encode('utf-8') # ARGH!!!!!!!!!!!!!!!!!!!!!!! Isn't this python3?
+
         if self.current_song != song:
             self.current_song = song
             self.mqtt_thread.mqtt_client.publish(self.mqtt_topic_prefix + '/song', song, retain=True, qos=0)
+
             #with publish_lock:
             #    publish_queue.append((self.mqtt_topic_prefix + '/song', song))
+
         if self.current_state != state:
             self.current_state = state
             self.mqtt_thread.mqtt_client.publish(self.mqtt_topic_prefix + '/state', state, retain=True, qos=0)
+
         self.mqtt_thread.mqtt_client.publish(self.mqtt_topic_prefix + '/state/json', json.dumps(status_dict), retain=True, qos=0)
         self.mqtt_thread.mqtt_client.publish(self.mqtt_topic_prefix + '/song/json', json.dumps(currentsong_dict), retain=True, qos=0)
 
@@ -262,10 +248,12 @@ def main():
     logging.info('starting mqtt-mpd transport')
     mqtt_thread = MQTT_mpd_transport()
     mqtt_thread.start()
-    mpd_threads = []
 
     # wait for mqtt thread to start, connect, ...
-    time.sleep(1)
+    while not mqtt_thread.connection_established:
+        Thread.sleep(0.1)
+
+    mpd_threads = []
 
     for channel, (server, port, mqtt_prefix) in CHANNEL_TO_SERVER.items():
         logging.info('starting mpd idler for {server}:{port}'.format(server=server, port=port))
