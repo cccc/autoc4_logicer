@@ -8,18 +8,14 @@ another thread subscribed to the MQTT server, listening for commands.
 """
 
 import argparse
+import json
 import logging
-import sys
-sys.path.append('/home/autoc4/.pyenv/versions/3.4.0/lib/python3.4/site-packages/')
-from subprocess import Popen
-from paho.mqtt import client as mqtt_client
-from mpd import MPDClient
 import mpd
-#from thread import Lock
-from threading import Thread
 import re
 import socket
-import json
+import threading
+import time
+from subprocess import Popen
 
 import helpers
 
@@ -101,7 +97,7 @@ class MQTT_mpd_transport(helpers.MQTT_Client):
         ]
 
     def __init__(self, clientId='mpd-bridge', keepalive=60, heartbeat=True):
-        super(MQTT_mpd_transport, self).__init__(clientId, keepalive=keepalive, heartbeat=heartbeat)
+        super(MQTT_mpd_transport, self).__init__(clientId, keepalive=keepalive, heartbeat=heartbeat, daemon=True)
 
     def publishReceived(self, mosq, obj, msg):
         match = re.match(r'mpd/(\w+)/control', msg.topic)
@@ -118,7 +114,7 @@ class MQTT_mpd_transport(helpers.MQTT_Client):
 
                 try:
                     server, port, mqtt_prefix = CHANNEL_TO_SERVER[match.group(1)]
-                    c = MPDClient()
+                    c = mpd.MPDClient()
                     c.timeout = 10
                     c.idletimeout = None
                     c.connect(server, port)
@@ -130,7 +126,7 @@ class MQTT_mpd_transport(helpers.MQTT_Client):
                     logging.error('error while sending mpd command ({server}:{port} {command})'.format(server=server, port=port, command=command))
 
 
-class MPD_idler(Thread):
+class MPD_idler(threading.Thread):
     """
     Connects to an MPD server and idles, waiting for events. Publishes new
     status when an event occurs.
@@ -142,7 +138,7 @@ class MPD_idler(Thread):
     current_state = None
 
     def __init__(self, server_name, server_port, mqtt_topic_prefix, mqtt_thread, *args, **kwargs):
-        super(MPD_idler, self).__init__(*args, **kwargs)
+        super(MPD_idler, self).__init__(*args, daemon=True, **kwargs)
 
         self.server_name = server_name
         self.server_port = server_port
@@ -154,7 +150,15 @@ class MPD_idler(Thread):
         self.should_stop = True
 
     def run(self):
-        self.client = MPDClient()
+
+        try:
+            self.main_loop()
+
+        except:
+            logging.exception('MPD Thread exception, exiting.')
+
+    def main_loop(self):
+        self.client = mpd.MPDClient()
         self.client.timeout = 10
         self.client.idletimeout = None
         self.connect()
@@ -197,7 +201,7 @@ class MPD_idler(Thread):
                 except mpd.ConnectionError:
                     pass
 
-                Thread.sleep(self.retry_timeout)
+                time.sleep(self.retry_timeout)
 
                 if self.retry_timeout < 3600: # max 1 hour
                     self.retry_timeout *= 2
@@ -251,7 +255,7 @@ def main():
 
     # wait for mqtt thread to start, connect, ...
     while not mqtt_thread.connection_established:
-        Thread.sleep(0.1)
+        time.sleep(0.1)
 
     mpd_threads = []
 
@@ -261,14 +265,11 @@ def main():
         t.start()
         mpd_threads.append(t)
 
-    mqtt_thread.join()
-    logging.info('mqtt-mpd transport joined')
 
-    for t in mpd_threads:
-        t.join()
-        logging.info('mpd idler for {server}:{port} joined'.format(server=t.server_name, port=t.server_port))
+    while mqtt_thread.is_alive() and all(t.is_alive() for t in mpd_threads):
+        time.sleep(1)
 
-    logging.info('stopping')
+    logging.info('exiting')
 
 
 if __name__ == '__main__':

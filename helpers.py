@@ -10,8 +10,8 @@ class MQTT_Client(threading.Thread):
     heartbeat_topic_prefix = 'heartbeat/'
     subscribe_topics = []
 
-    def __init__(self, clientId=None, mqtt_host='127.0.0.1', mqtt_port=1883, keepalive=60, heartbeat=False):
-        super(MQTT_Client, self).__init__()
+    def __init__(self, clientId=None, mqtt_host='127.0.0.1', mqtt_port=1883, keepalive=60, heartbeat=False, *args, **kwargs):
+        super(MQTT_Client, self).__init__(*args, **kwargs)
 
         self.clientId = clientId
         self.mqtt_host = mqtt_host
@@ -38,6 +38,14 @@ class MQTT_Client(threading.Thread):
         self.connection_established = False
 
     def run(self):
+
+        try:
+            self.main_loop()
+
+        except:
+            logging.exception('MQTT Client Thread exception, exiting.')
+
+    def main_loop(self):
 
         self.mqtt_client = mqtt_client.Client(self.clientId)
 

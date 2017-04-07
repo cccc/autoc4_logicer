@@ -13,15 +13,13 @@ Implements logic for the MQTT-based home automation. This includes:
 
 import argparse
 import logging
-import sys
-sys.path.append('/home/autoc4/.pyenv/versions/3.4.0/lib/python3.4/site-packages/')
-from subprocess import Popen
-from threading import Thread
-from datetime import datetime
-import time
-import struct
 import re
+import struct
+import threading
+import time
 import urllib.request
+from datetime import datetime
+from subprocess import Popen
 
 import config
 import helpers
@@ -126,7 +124,7 @@ class MQTTLogicer(helpers.MQTT_Client):
         ]
 
     def __init__(self, clientId='logicer', keepalive=60, heartbeat=True):
-        super(MQTTLogicer, self).__init__(clientId, keepalive=keepalive, heartbeat=heartbeat)
+        super(MQTTLogicer, self).__init__(clientId, keepalive=keepalive, heartbeat=heartbeat, daemon=True)
 
         self.last_state = {}
 
@@ -266,10 +264,12 @@ class MQTTLogicer(helpers.MQTT_Client):
                 return
 
             logging.debug('shutdown')
+
             # turn off music and reset outputs
             for t in self.musiken:
                 self.mqtt_client.publish(t+'/control', 'stop')
                 self.mqtt_client.publish(t+'/control', 'resetoutputs')
+
             # turn off dmx lights
             for t in self.dmx_channels:
                 self.mqtt_client.publish(t, b'\x00'*8, retain=True)
@@ -369,7 +369,7 @@ class MQTTLogicer(helpers.MQTT_Client):
                 logging.warning('connection to webserver/spaceapi failed: {}'.format(repr(e)))
 
 
-class MQTT_Time_Thread(Thread):
+class MQTT_Time_Thread(threading.Thread):
     """
     Publishes the current time in regular intervals.
     """
@@ -378,30 +378,42 @@ class MQTT_Time_Thread(Thread):
     topic = 'time'
 
     def __init__(self, logicer, *args, **kwargs):
-        super(MQTT_Time_Thread, self).__init__(*args, **kwargs)
+        super(MQTT_Time_Thread, self).__init__(*args, daemon=True, **kwargs)
         self.logicer = logicer
 
     def run(self):
 
-        while not self.logicer.connection_established:
-            Thread.sleep(0.1)
+        try:
+            self.main_loop()
 
-        logging.info('thimethread started')
+        except:
+            logging.exception('Thimethread exception, exiting.')
+
+    def main_loop(self):
+
+        while not self.logicer.connection_established:
+            time.sleep(0.1)
+
+        logging.info('timethread started')
 
         while True:
-            t = datetime.now()
-            data = struct.pack('<BBBBBBBB',
-                t.hour,
-                t.minute,
-                t.second,
-                0,
-                t.weekday() + 1,
-                t.month,
-                t.day,
-                t.year % 100,
-                )
-            self.logicer.mqtt_client.publish(self.topic, data)
-            Thread.sleep(self.interval)
+            self.publish_time()
+            time.sleep(self.interval)
+
+    def publish_time(self):
+
+        t = datetime.now()
+        data = struct.pack('<BBBBBBBB',
+            t.hour,
+            t.minute,
+            t.second,
+            0,
+            t.weekday() + 1,
+            t.month,
+            t.day,
+            t.year % 100,
+            )
+        self.logicer.mqtt_client.publish(self.topic, data)
 
 
 def main():
@@ -415,13 +427,15 @@ def main():
     logging.info('starting')
 
     logicer = MQTTLogicer()
-    logicer.run()
+    logicer.start()
 
     timethread = MQTT_Time_Thread(logicer)
     timethread.start()
 
-    logicer.join()
-    timethread.join()
+    while logicer.is_alive() and timethread.is_alive():
+        time.sleep(1)
+
+    logging.info('exiting')
 
 if __name__ == '__main__':
     main()
