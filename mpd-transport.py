@@ -270,6 +270,7 @@ def main():
         time.sleep(1)
 
     logging.info('exiting')
+    sys.exit(1)
 
 
 if __name__ == '__main__':
