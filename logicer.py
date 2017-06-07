@@ -184,6 +184,10 @@ class MQTTLogicer(helpers.MQTT_Client):
             logging.debug('toggling fnordcenter')
             self.toggle_room_lights(self.fnordcenter_lichter)
 
+        if topic == 'schalter/keller/1' and new_value ==  b'\x00':
+            logging.debug('toggling keller')
+            self.toggle_room_lights(self.keller_lichter)
+
         if topic == 'club/bell' and new_value == b'\x00':
 
             if self.last_state['club/status'] == b'\x01':
