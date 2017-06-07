@@ -35,8 +35,8 @@ class MQTTLogicer(helpers.MQTT_Client):
         'licht/fnord/rechts',
     ]
     keller_lichter = [
-        'licht/keller/aussen',
-        'licht/keller/innen',
+        'licht/keller/loet',
+        'licht/keller/mitte',
         'licht/keller/vorne',
     ]
     wohnzimmer_lichter = [
