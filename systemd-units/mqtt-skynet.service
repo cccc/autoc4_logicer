@@ -1,0 +1,16 @@
+[Unit]
+Description=AutoC4 MQTT Skynet
+Documentation=https://github.com/cccc/autoc4_logicer
+PartOf=autoc4.target
+After=mosquitto.service
+
+[Service]
+Type=simple
+ExecStart=/home/autoc4/.pyenv/shims/python skynet.py --logging journald
+WorkingDirectory=/home/autoc4/logicer
+User=autoc4
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=autoc4.target
