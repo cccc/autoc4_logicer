@@ -41,6 +41,9 @@ class IssParser():
         response = urllib.request.urlopen(IssParser.url)
         bs = BeautifulSoup(response, 'html.parser')
 
+        if bs.text.find('No visible passes found within the search period') >= 0:
+            return []
+
         table, = bs.select('table.standardTable')
 
         keys = [
