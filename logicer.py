@@ -54,7 +54,11 @@ class MQTTLogicer(helpers.MQTT_Client):
     powers = [
         'power/wohnzimmer/kitchenlight',
     ]
-    alle_lichter = fnordcenter_lichter + keller_lichter + wohnzimmer_lichter + plenarsaal_lichter + powers
+    sockets = [
+        'socket/wohnzimmer/screen/a',
+        'socket/wohnzimmer/screen/b',
+    ]
+    alle_lichter = fnordcenter_lichter + keller_lichter + wohnzimmer_lichter + plenarsaal_lichter + powers + sockets
     exit_light = 'licht/wohnzimmer/tuer'
 
     fenster_to_licht = {
