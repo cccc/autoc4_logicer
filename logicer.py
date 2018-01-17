@@ -67,8 +67,8 @@ class MQTTLogicer(helpers.MQTT_Client):
         'fenster/plenar/vornelinks': 'licht/plenar/vornefenster',
         'fenster/plenar/hintenrechts': 'licht/plenar/hintenfenster',
         'fenster/plenar/hintenlinks': 'licht/plenar/hintenfenster',
-        'fenster/wohnzimmer/kuecherechts': 'licht/wohnzimmer/kueche',
-        'fenster/wohnzimmer/kuechelinks': 'licht/wohnzimmer/kueche',
+        'fenster/wohnzimmer/rechts': 'licht/wohnzimmer/kueche',
+        'fenster/wohnzimmer/links': 'licht/wohnzimmer/kueche',
         'fenster/fnord/links': 'licht/fnord/links',
         'fenster/fnord/rechts': 'licht/fnord/rechts',
     }
