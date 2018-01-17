@@ -204,7 +204,15 @@ class MQTT_Skynet_Thread(threading.Thread):
         logging.info('skynet thread started')
 
         while True:
-            self.poll_data()
+
+            try:
+                self.poll_data()
+
+            except urllib.error.URLError:
+                logging.info('urllib error')
+                time.sleep(60)
+                continue
+
             time.sleep(self.interval)
 
     def poll_data(self):
