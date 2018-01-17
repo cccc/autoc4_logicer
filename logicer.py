@@ -427,7 +427,7 @@ class MQTT_Time_Thread(threading.Thread):
 
 def main():
     parser = argparse.ArgumentParser(
-            description='MQTT MPD Bridge',
+            description='MQTT Logicer',
             parents=[helpers.get_default_parser()],
         )
     args = parser.parse_args()
