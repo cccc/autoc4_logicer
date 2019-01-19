@@ -359,6 +359,11 @@ class MQTTLogicer(helpers.MQTT_Client):
             # publish to irc topic ?
 
             if value != b'\x00':
+                self.mqtt_client.publish('rgb/bell', b'\x00\xff\x00' * 4, retain=True)
+            else:
+                self.mqtt_client.publish('rgb/bell', b'\xff\x00\x00' * 4, retain=True)
+
+            if value != b'\x00':
                 status = 'open'
             else:
                 status = 'closed'
