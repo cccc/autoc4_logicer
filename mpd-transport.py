@@ -22,7 +22,7 @@ import helpers
 CHANNEL_TO_SERVER = {
     # topic_part: (mpd_server_name, mpd_server_port, mpd_topic_prefix)
     'plenar': ('eeetop', 6600, 'mpd/plenar'),
-    'fnord': ('trillian', 6600, 'mpd/fnord'),
+    'fnord': ('zaphod', 6600, 'mpd/fnord'),
     'baellebad': ('autoc4', 6600, 'mpd/baellebad'),
     'keller': ('eeepc', 6600, 'mpd/keller'),
 }
