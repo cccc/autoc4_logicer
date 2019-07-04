@@ -43,6 +43,8 @@ class MQTTLogicer(helpers.MQTT_Client):
     leds_keller = [
         'led/keller/werkbankwarm',
         'led/keller/werkbankkalt',
+        'led/keller/hintenwarm',
+        'led/keller/hintenkalt',
     ]
     wohnzimmer_lichter = [
         'licht/wohnzimmer/kueche',
@@ -197,7 +199,7 @@ class MQTTLogicer(helpers.MQTT_Client):
             logging.debug('toggling fnordcenter')
             self.toggle_room_lights(self.fnordcenter_lichter)
 
-        if topic == 'schalter/keller/2' and new_value ==  b'\x00':
+        if topic == 'schalter/keller/1' and new_value ==  b'\x00':
             logging.debug('toggling keller')
             self.toggle_room_lights(self.keller_lichter)
 

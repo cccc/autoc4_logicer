@@ -9,8 +9,9 @@ Usage:
 
 from twisted.words.protocols import irc
 from twisted.internet.protocol import Factory
-from twisted.internet import reactor
+from twisted.internet import ssl, reactor
 from twisted.internet.endpoints import TCP4ClientEndpoint
+from twisted.internet.endpoints import SSL4ClientEndpoint
 from datetime import datetime
 import re
 import sys
@@ -33,7 +34,8 @@ class Bot(irc.IRCClient):
         if re.search(r'You are now identified', msg):
             print("Logged in.")
             self.identifed = True
-            self.sendLine("TOPIC #cccc")
+            #self.sendLine("TOPIC #cccc")
+            self.join("#cccc")
 
     def irc_RPL_TOPIC(self, prefix, params):
         self.updateTopic(params[2])
@@ -70,6 +72,6 @@ if __name__ == "__main__":
     else:
         print("Alter, l2syntax!")
         sys.exit(0) 
-    endpoint = TCP4ClientEndpoint(reactor, "chat.freenode.net", 6667)
+    endpoint = SSL4ClientEndpoint(reactor, "chat.freenode.net", 6697, ssl.CertificateOptions())
     d = endpoint.connect(BotFactory("c4status", status))
     reactor.run()
