@@ -104,6 +104,9 @@ class MQTTLogicer(helpers.MQTT_Client):
         'dmx/wohnzimmer/tuer3',
         'dmx/wohnzimmer/gang',
         'dmx/wohnzimmer/baellebad',
+        'dmx/wohnzimmer/spuele',
+        'dmx/wohnzimmer/chaosknoten',
+        'dmx/wohnzimmer/tresen',
     ]
     leds_wohnzimmer = [
         'led/kitchen/sink',
