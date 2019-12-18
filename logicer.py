@@ -127,6 +127,7 @@ class MQTTLogicer(helpers.MQTT_Client):
     subscribe_topics = [
             ('schalter/+/+',  0),
             ('licht/+/+',     0),
+            ('led/+/+',       0),
             ('licht/+',       0),
             ('screen/+/+',    0),
             ('fenster/+/+',   0),
@@ -205,6 +206,13 @@ class MQTTLogicer(helpers.MQTT_Client):
         if topic == 'schalter/keller/1' and new_value == b'\x00':
             logging.debug('toggling keller')
             self.toggle_room_lights(self.keller_lichter)
+
+        if topic == 'schalter/keller/hinten2' and new_value == b'\x00':
+            logging.debug('toggling keller hinten')
+            self.toggle_room_lights([
+                    'led/keller/hintenwarm',
+                    'led/keller/hintenkalt'
+                ])
 
         if topic == 'club/bell' and new_value == b'\x00':
 
