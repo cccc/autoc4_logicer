@@ -19,12 +19,15 @@ import threading
 import time
 import urllib.request
 import sys
+from collections import namedtuple
 from datetime import datetime
 from subprocess import Popen
 
 import config
 import helpers
 
+
+_LastStateEntry = namedtuple('_LastStateEnry', ['value', 'time'])
 
 class MQTTLogicer(helpers.MQTT_Client):
     """
@@ -153,12 +156,12 @@ class MQTTLogicer(helpers.MQTT_Client):
             self.initial_value(msg.topic, msg.payload)
 
         else:
-            if msg.payload != self.last_state[msg.topic]:
+            if msg.payload != self.last_state[msg.topic].value:
                 self.value_changed(msg.topic, msg.payload)
 
         self.got_publish(msg.topic, msg.payload, msg.retain)
 
-        self.last_state[msg.topic] = msg.payload
+        self.last_state[msg.topic] = _LastStateEntry(msg.payload, time.time())
 
 
     # FROM HERE ON: actual logic
@@ -216,7 +219,7 @@ class MQTTLogicer(helpers.MQTT_Client):
 
         if topic == 'club/bell' and new_value == b'\x00':
 
-            if self.last_state['club/status'] == b'\x01':
+            if self.last_state['club/status'].value == b'\x01':
                 logging.debug('bell received, opening door')
                 self.mqtt_client.publish('club/gate', b'')
 
@@ -311,7 +314,7 @@ class MQTTLogicer(helpers.MQTT_Client):
                 for fenster, licht in self.fenster_to_licht.items():
                     if not fenster in self.last_state:
                         pass # TODO: edge case
-                    elif self.last_state[fenster] != b'\x00':
+                    elif self.last_state[fenster].value != b'\x00':
                         to_switch[licht] = b'\x01'
                         to_switch[self.exit_light] = b'\x01'
 
@@ -359,7 +362,7 @@ class MQTTLogicer(helpers.MQTT_Client):
                 logging.warning('Toggling light without known last state, ignoring. ({})'.format(repr(t)))
                 return
 
-        some_light_on = any(self.last_state[t] != b'\x00' for t in room_lights)
+        some_light_on = any(self.last_state[t].value != b'\x00' for t in room_lights)
 
         if some_light_on:
             logging.debug('turning lights off')
