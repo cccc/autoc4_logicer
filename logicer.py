@@ -126,6 +126,7 @@ class MQTTLogicer(helpers.MQTT_Client):
     dmx_channels = dmx_channels_fnordcenter + dmx_channels_wohnzimmer + dmx_channels_plenarsaal + leds_wohnzimmer
 
     last_state = None
+    last_event = None
 
     subscribe_topics = [
             ('schalter/+/+',  0),
@@ -149,6 +150,7 @@ class MQTTLogicer(helpers.MQTT_Client):
         super(MQTTLogicer, self).__init__(clientId, keepalive=keepalive, heartbeat=heartbeat, daemon=True)
 
         self.last_state = {}
+        self.last_event = {}
 
     def publishReceived(self, mosq, obj, msg):
 
@@ -211,11 +213,30 @@ class MQTTLogicer(helpers.MQTT_Client):
             self.toggle_room_lights(self.keller_lichter)
 
         if topic == 'schalter/keller/hinten2' and new_value == b'\x00':
-            logging.debug('toggling keller hinten')
-            self.toggle_room_lights([
-                    'led/keller/hintenwarm',
-                    'led/keller/hintenkalt'
-                ])
+            t = self.last_event.get('schalter/keller/hinten2', 0)
+            now = time.time()
+            timeout = now - t
+            self.last_event['schalter/keller/hinten2'] = now
+
+            if timeout > 10:
+                logging.debug('toggling keller hinten')
+                self.toggle_room_lights([
+                        'led/keller/hintenwarm',
+                        'led/keller/hintenkalt'
+                    ])
+            else:
+                logging.debug('cycling keller hinten')
+                self.cycle_topic_states((
+                        'led/keller/hintenwarm',
+                        'led/keller/hintenkalt'
+                    ),
+                    [
+                            (b'\x00', b'\x00'),
+                            (b'\x01', b'\x01'),
+                            (b'\x01', b'\x00'),
+                            (b'\x00', b'\x01'),
+                        ]
+                    )
 
         if topic == 'club/bell' and new_value == b'\x00':
 
@@ -373,6 +394,36 @@ class MQTTLogicer(helpers.MQTT_Client):
             logging.debug('turning lights on')
             for t in room_lights:
                 self.mqtt_client.publish(t, b'\x01', retain=True)
+
+    def cycle_topic_states(self, topics, states, force_index=None):
+        """
+        Takes a list of topics and a corresponding list of tuples of values.
+            * If the current values of the given topics is in the states list,
+              set them to the next entry
+            * Otherwise set them to the first entry in the states list
+        """
+
+        current_values = []
+
+        for topic in topics:
+            if topic in self.last_state:
+                current_values.append(self.last_state[topic].value)
+            else:
+                logging.warning('Cycling topics without known last state, ignoring. ({})'.format(topic))
+                return
+
+        current_values = tuple(current_values)
+        logging.debug('current values: {}'.format(current_values))
+
+        try:
+            index = states.index(current_values)
+            new_index = (index + 1) % len(states)
+        except ValueError:
+            new_index = 0
+
+        for topic, value in zip(topics, states[new_index]):
+            logging.debug('setting: {} = {}'.format(repr(topic), repr(value)))
+            self.mqtt_client.publish(topic, value, retain=True)
 
     def set_club_status(self, value):
             logging.debug('set club status')
