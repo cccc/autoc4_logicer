@@ -182,7 +182,11 @@ class MQTTLogicer(helpers.MQTT_Client):
             self.mqtt_client.publish('club/status', value, retain=True)
 
         if topic == 'club/status':
-            self.set_club_status(value)
+            self.status_state=value;
+            self.set_club_status(value,self.status_message)
+        if topic == 'club/status/message':
+            self.status_message=value;
+            self.set_club_status(self.status_state,value)
 
 
     def value_changed(self, topic, new_value):
