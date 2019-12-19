@@ -129,20 +129,21 @@ class MQTTLogicer(helpers.MQTT_Client):
     last_event = None
 
     subscribe_topics = [
-            ('schalter/+/+',  0),
-            ('licht/+/+',     0),
-            ('led/+/+',       0),
-            ('licht/+',       0),
-            ('screen/+/+',    0),
-            ('fenster/+/+',   0),
-            ('dmx/+/+',       0),
-            ('dmx/+',         0),
-            ('preset/+/+',    0),
-            ('club/status',   0),
-            ('club/shutdown', 0),
-            ('club/gate',     0),
-            ('club/bell',     0),
-            ('heartbeat/+',   0),
+            ('schalter/+/+',        0),
+            ('licht/+/+',           0),
+            ('led/+/+',             0),
+            ('licht/+',             0),
+            ('screen/+/+',          0),
+            ('fenster/+/+',         0),
+            ('dmx/+/+',             0),
+            ('dmx/+',               0),
+            ('preset/+/+',          0),
+            ('club/status',         0),
+            ('club/status/message', 0),
+            ('club/shutdown',       0),
+            ('club/gate',           0),
+            ('club/bell',           0),
+            ('heartbeat/+',         0),
             #('temp/+/+',     0),
         ]
 
@@ -151,6 +152,8 @@ class MQTTLogicer(helpers.MQTT_Client):
 
         self.last_state = {}
         self.last_event = {}
+        self.status_state = b'\x00';
+        self.status_message = "";
 
     def publishReceived(self, mosq, obj, msg):
 
@@ -248,7 +251,9 @@ class MQTTLogicer(helpers.MQTT_Client):
                 logging.debug('bell off')
 
         if topic == 'club/status':
-            self.set_club_status(new_value)
+            self.set_club_status(new_value, self.status_message)
+        if topic == 'club/status/message':
+            self.set_club_status(self.status_state, new_value)
 
 
     def got_publish(self, topic, payload, retain):
@@ -425,18 +430,18 @@ class MQTTLogicer(helpers.MQTT_Client):
             logging.debug('setting: {} = {}'.format(repr(topic), repr(value)))
             self.mqtt_client.publish(topic, value, retain=True)
 
-    def set_club_status(self, value):
+    def set_club_status(self, state, message):
             logging.debug('set club status')
             # publish to irc topic ?
 
-            if value != b'\x00':
-                self.mqtt_client.publish('rgb/bell', b'\x00\xff\x00' * 4, retain=True)
-            else:
-                self.mqtt_client.publish('rgb/bell', b'\xff\x00\x00' * 4, retain=True)
+            self.status_state=state;
+            self.status_message=message;
 
-            if value != b'\x00':
+            if state != b'\x00':
+                self.mqtt_client.publish('rgb/bell', b'\x00\xff\x00' * 4, retain=True)
                 status = 'open'
             else:
+                self.mqtt_client.publish('rgb/bell', b'\xff\x00\x00' * 4, retain=True)
                 status = 'closed'
 
             logging.debug('setting irc topic')
