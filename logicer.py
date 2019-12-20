@@ -460,7 +460,7 @@ class MQTTLogicer(helpers.MQTT_Client):
                         data='password={secret}&state={state}&message={message}'.format(
                                 secret  = config.spaceapi_password,
                                 state   = status,
-                                message = message
+                                message = message.decode("utf-8")
                             ).encode()
                     )
             except Exception as e:
