@@ -225,8 +225,8 @@ class MQTTLogicer(helpers.MQTT_Client):
                         'led/keller/hintenkalt'
                     ],
                 'schalter/keller/3':[
-                        'led/keller/hintenwarm',
-                        'led/keller/hintenkalt'
+                        'led/keller/werkbankwarm',
+                        'led/keller/werkbankkalt'
                     ],
             }
 
