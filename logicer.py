@@ -218,26 +218,32 @@ class MQTTLogicer(helpers.MQTT_Client):
         if topic == 'schalter/keller/1' and new_value == b'\x00':
             logging.debug('toggling keller')
             self.toggle_room_lights(self.keller_lichter)
+            
+        cycle_topics = {
+                'schalter/keller/hinten2':[
+                        'led/keller/hintenwarm',
+                        'led/keller/hintenkalt'
+                    ],
+                'schalter/keller/3':[
+                        'led/keller/hintenwarm',
+                        'led/keller/hintenkalt'
+                    ],
+            }
 
-        if topic == 'schalter/keller/hinten2' and new_value == b'\x00':
-            t = self.last_event.get('schalter/keller/hinten2', 0)
+        if (topic == 'schalter/keller/hinten2' or topic == 'schalter/keller/3') and new_value == b'\x00':
+            t = self.last_event.get(topic, 0)
             now = time.time()
             timeout = now - t
-            self.last_event['schalter/keller/hinten2'] = now
+            self.last_event[topic] = now
 
             if timeout > 10:
-                logging.debug('toggling keller hinten')
-                self.toggle_room_lights([
-                        'led/keller/hintenwarm',
-                        'led/keller/hintenkalt'
-                    ])
+                logging.debug('toggling {}'.format(topic))
+                self.toggle_room_lights(cycle_topics[topic])
             else:
-                logging.debug('cycling keller hinten')
-                self.cycle_topic_states((
-                        'led/keller/hintenwarm',
-                        'led/keller/hintenkalt'
-                    ),
-                    [
+                logging.debug('cycling {}'.format(topic))
+                self.cycle_topic_states(
+                        cycle_topics[topic],
+                        [
                             (b'\x00', b'\x00'),
                             (b'\x01', b'\x01'),
                             (b'\x01', b'\x00'),
