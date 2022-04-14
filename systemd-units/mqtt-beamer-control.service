@@ -1,0 +1,14 @@
+[Unit]
+Description=AutoC4 MQTT Beamer Control
+Documentation=https://github.com/cccc/autoc4_logicer
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python beamer-control.py --logging journald
+WorkingDirectory=/home/pi/logicer
+User=pi
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
