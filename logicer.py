@@ -467,8 +467,8 @@ class MQTTLogicer(helpers.MQTT_Client):
                 self.mqtt_client.publish('rgb/bell', b'\xff\x00\x00' * 4, retain=True)
                 status = 'closed'
 
-            logging.debug('setting irc topic')
-            Popen(['/usr/bin/python2.7', '/home/autoc4/logicer/irc_topicer.py', status])
+            #logging.debug('setting irc topic')
+            #Popen(['/usr/bin/python2.7', '/home/autoc4/logicer/irc_topicer.py', status])
 
             # forward to webserver (for spaceapi)
             logging.debug('setting spaceapi open status')
