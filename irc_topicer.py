@@ -7,6 +7,9 @@ Usage:
     python irc_topicer.py {open|closed}
 """
 
+#Chaos Computer Club Cologne e.V. | http://koeln.ccc.de/c4/faq/index.xml#anreise
+#Chaos Computer Club Cologne e.V. | https://koeln.ccc.de/updates/2020-03-25_Offene_Abende_Online.xml
+
 from twisted.words.protocols import irc
 from twisted.internet.protocol import Factory
 from twisted.internet import ssl, reactor
