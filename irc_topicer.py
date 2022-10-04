@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# LEGACY
+
 """
 Connects to freenode and sets the topic of the c4 irc channel.
 
@@ -63,7 +65,7 @@ class BotFactory(Factory):
     def __init__(self, nickname, status):
         self.bot_nickname = nickname
         self.status = status
-        
+
     def buildProtocol(self, addr):
         return Bot(self)
 
@@ -74,7 +76,7 @@ if __name__ == "__main__":
         status = "closed"
     else:
         print("Alter, l2syntax!")
-        sys.exit(0) 
+        sys.exit(0)
     endpoint = SSL4ClientEndpoint(reactor, "chat.freenode.net", 6697, ssl.CertificateOptions())
     d = endpoint.connect(BotFactory("c4status", status))
     reactor.run()
