@@ -336,6 +336,9 @@ class MQTTLogicer(helpers.MQTT_Client):
 
             logging.debug('shutdown')
 
+            # turn off beamer
+            self.mqtt_client.publish('beamer/plenar/control', 'power off')
+
             # turn off music and reset outputs
             for t in self.musiken:
                 self.mqtt_client.publish(t+'/control', 'stop')
