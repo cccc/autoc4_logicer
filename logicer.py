@@ -479,7 +479,7 @@ class MQTTLogicer(helpers.MQTT_Client):
                         data='password={secret}&state={state}&message={message}'.format(
                                 secret  = config.spaceapi_password,
                                 state   = status,
-                                message = message.decode("utf-8")
+                                message = ( message.decode("utf-8") if isinstance(message, bytes) else message )
                             ).encode()
                     )
             except Exception as e:
