@@ -23,7 +23,7 @@ CHANNEL_TO_SERVER = {
     # topic_part: (mpd_server_name, mpd_server_port, mpd_topic_prefix)
     'plenar': ('eeetop', 6600, 'mpd/plenar'),
     'fnord': ('zaphod', 6600, 'mpd/fnord'),
-    'baellebad': ('autoc4', 6600, 'mpd/baellebad'),
+    'wohnzimmer': ('mpd-wohnzimmer', 6600, 'mpd/wohnzimmer'),
     'keller': ('eeepc', 6600, 'mpd/keller'),
 }
 
