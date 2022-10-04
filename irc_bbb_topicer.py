@@ -36,6 +36,7 @@ class Bot(irc.IRCClient):
         print("Bot online with nickname: %s" % (self.nickname,)) #DEBUG
 
     def noticed(self, sender, recipient, msg):
+        #print('NOTICED: {} {} {}'.format(sender, recipient, msg))
         if re.search(r'You are now identified', msg):
             print("Logged in.")
             self.identifed = True
@@ -43,13 +44,15 @@ class Bot(irc.IRCClient):
             self.join("#cccc")
 
     def irc_RPL_TOPIC(self, prefix, params):
+        #print('RPL_TOPIC: {} {}'.format(prefix, params))
         self.updateTopic(params[2])
 
     def updateTopic(self, oldtopic):
         print("Old Topic: %s" % oldtopic)
-        topic = re.sub(' \| Club ist offen', '', oldtopic)
         if self.status == "open":
-            topic += " | Club ist offen"
+            topic = 'Chaos Computer Club Cologne e.V. | https://koeln.ccc.de/updates/2020-03-25_Offene_Abende_Online.xml | BBB-Raum offen'
+        else:
+            topic = 'Chaos Computer Club Cologne e.V. | https://koeln.ccc.de/updates/2020-03-25_Offene_Abende_Online.xml | BBB-Raum geschlossen'
         if topic == oldtopic:
             print("not updating topic")
         else:
