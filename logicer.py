@@ -69,6 +69,8 @@ class MQTTLogicer(helpers.MQTT_Client):
         'socket/wohnzimmer/screen/b',
         'relais/plenar/amp',
         'relais/plenar/dmx',
+        'relais/fnord/dmx',
+        'relais/fnord/audio',
     ]
     screens = [
         'screen/wohnzimmer/infoscreen'
@@ -228,6 +230,11 @@ class MQTTLogicer(helpers.MQTT_Client):
             if self.last_state['relais/plenar/dmx'].value != b'\x01':
                 logging.debug('non zero dmx code, switching on plenarsaal dmx socket {}'.format(self.last_state['relais/plenar/dmx'].value))
                 self.mqtt_client.publish('relais/plenar/dmx', b'\x01', retain=True)
+
+        if topic in self.dmx_channels_fnordcenter and any(b for b in new_value):
+            if self.last_state['relais/fnord/dmx'].value != b'\x01':
+                logging.debug('non zero dmx code, switching on fnordcenter dmx socket {}'.format(self.last_state['relais/fnord/dmx'].value))
+                self.mqtt_client.publish('relais/fnord/dmx', b'\x01', retain=True)
             
         cycle_topics = {
                 'schalter/keller/hinten2':[
