@@ -11,11 +11,11 @@ bs4 = "*"
 twisted = "*"
 pyopenssl = "*"
 service-identity = "*"
-paho-mqtt = "==1.6.1"
+paho-mqtt = ""
 flask = "*"
 requests = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.7"
+python_version = "3.11.1"
