@@ -162,7 +162,7 @@ class MQTTLogicer(helpers.MQTT_Client):
         self.status_state = b'\x00';
         self.status_message = "";
 
-    def publishReceived(self, mosq, obj, msg):
+    def on_message(self, client, userdata, msg):
 
         if not msg.topic in self.last_state:
             self.initial_value(msg.topic, msg.payload)

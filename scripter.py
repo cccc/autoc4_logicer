@@ -211,7 +211,7 @@ class MQTT_thread(Thread):
                 ]:
                 self.mqtt_client.subscribe(*t)
 
-    def publishReceived(self, mosq, obj, msg):
+    def on_message(self, client, userdata, msg):
         match = re.match(r'^script/(\w+)(?:/(.*))?$', msg.topic)
         if match:
             for s in self.scripts:

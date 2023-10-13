@@ -72,7 +72,7 @@ class MQTT_beamer_controller(helpers.MQTT_Client):
         super().__init__(clientId, mqtt_host=mqtt_host, keepalive=keepalive, heartbeat=heartbeat, daemon=True)
         self.serial_thread = serial_thread
 
-    def publishReceived(self, mosq, obj, msg):
+    def on_message(self, client, userdata, msg):
         if msg.retain: # ignore retained messages
             return
 
