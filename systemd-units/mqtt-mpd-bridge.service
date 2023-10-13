@@ -6,7 +6,7 @@ After=mosquitto.service
 
 [Service]
 Type=simple
-ExecStart=/home/autoc4/.pyenv/shims/python mpd-transport.py --logging journald
+ExecStart=/usr/bin/env pipenv run python mpd-transport.py --logging journald
 WorkingDirectory=/home/autoc4/logicer
 User=autoc4
 StandardOutput=journal
