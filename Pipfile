@@ -1,0 +1,21 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+python-mpd2 = "*"
+systemd-python = "*"
+beautifulsoup4 = "*"
+bs4 = "*"
+twisted = "*"
+pyopenssl = "*"
+service-identity = "*"
+paho-mqtt = "==1.6.1"
+flask = "*"
+requests = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.7"

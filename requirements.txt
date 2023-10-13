@@ -1,6 +1,0 @@
-mosquitto
-paho-mqtt
-python-mpd2
-systemd-python
-beautifulsoup4
-bs4
