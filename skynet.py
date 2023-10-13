@@ -217,7 +217,8 @@ class MQTT_Skynet_Thread(threading.Thread):
 
     def poll_data(self):
 
-        data = IssParser.get_iss_data() + IridiumParser.get_iridium_data()
+        # data = IssParser.get_iss_data() + IridiumParser.get_iridium_data()
+        data = IssParser.get_iss_data()
         data.sort(key=lambda x:x['timestamp'])
 
         self.mqtt_thread.mqtt_client.publish(self.topic, json.dumps(data), retain=True)
