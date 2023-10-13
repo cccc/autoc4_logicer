@@ -49,7 +49,7 @@ class MQTT_Client(threading.Thread):
 
         self.mqtt_client = mqtt_client.Client(self.clientId)
 
-        self.mqtt_client.on_message = self.publishReceived
+        self.mqtt_client.on_message = self.on_message
         self.mqtt_client.on_connect = self.on_connect
         #self.mqtt_client.on_publish = on_publish
         #self.mqtt_client.on_subscribe = self.on_subscribe
@@ -68,22 +68,28 @@ class MQTT_Client(threading.Thread):
 
         logging.info('leaving program loop')
 
-    def on_connect(self, mosq, obj, rc):
+    def on_connect(self, client, userdata, flags, rc):
 
-        if rc != 0:
-            logging.info('could not connect, bad return code')
+        try:
+            if rc != 0:
+                logging.info('could not connect, bad return code')
 
-        else:
-            logging.info('connected, subscribing')
-            self.mqtt_client.subscribe(self.subscribe_topics)
+            else:
+                logging.info('connected, subscribing')
+                if self.subscribe_topics:
+                    self.mqtt_client.subscribe(self.subscribe_topics)
 
-            if self.heartbeat:
-                logging.info('sending heartbeat')
-                self.mqtt_client.publish(self.heartbeat_topic, b'\x01', retain=True)
+                if self.heartbeat:
+                    logging.info('sending heartbeat')
+                    self.mqtt_client.publish(self.heartbeat_topic, b'\x01', retain=True)
 
-            self.connection_established = True
+                self.connection_established = True
 
-    def publishReceived(self, mosq, obj, msg):
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def on_message(self, client, userdata, msg):
         pass
 
 

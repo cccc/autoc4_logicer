@@ -99,7 +99,7 @@ class MQTT_mpd_transport(helpers.MQTT_Client):
     def __init__(self, clientId='mpd-bridge', keepalive=60, heartbeat=True):
         super(MQTT_mpd_transport, self).__init__(clientId, keepalive=keepalive, heartbeat=heartbeat, daemon=True)
 
-    def publishReceived(self, mosq, obj, msg):
+    def on_message(self, client, userdata, msg):
         match = re.match(r'mpd/(\w+)/control', msg.topic)
         
         if match and match.group(1) in CHANNEL_TO_SERVER:
