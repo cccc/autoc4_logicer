@@ -17,7 +17,7 @@ import re
 import struct
 import threading
 import time
-import urllib.request
+import requests
 import sys
 from collections import namedtuple
 from datetime import datetime
@@ -159,8 +159,6 @@ class MQTTLogicer(helpers.MQTT_Client):
 
         self.last_state = {}
         self.last_event = {}
-        self.status_state = b'\x00';
-        self.status_message = "";
 
     def on_message(self, client, userdata, msg):
 
@@ -187,13 +185,6 @@ class MQTTLogicer(helpers.MQTT_Client):
         if topic == 'schalter/wohnzimmer/rechts':
             logging.debug('setting club status')
             self.mqtt_client.publish('club/status', value, retain=True)
-
-        if topic == 'club/status':
-            self.status_state=value;
-            self.set_club_status(value,self.status_message)
-        if topic == 'club/status/message':
-            self.status_message=value;
-            self.set_club_status(self.status_state,value)
 
 
     def value_changed(self, topic, new_value):
@@ -276,11 +267,6 @@ class MQTTLogicer(helpers.MQTT_Client):
 
             else:
                 logging.debug('bell off')
-
-        if topic == 'club/status':
-            self.set_club_status(new_value, self.status_message)
-        if topic == 'club/status/message':
-            self.set_club_status(self.status_state, new_value)
 
 
     def got_publish(self, topic, payload, retain):
@@ -378,6 +364,11 @@ class MQTTLogicer(helpers.MQTT_Client):
             for t, p in to_switch.items():
                 self.mqtt_client.publish(t, p, retain=True)
 
+        if topic == 'club/status':
+            self.set_club_status(payload, self.last_state.get('club/status/message', ''))
+        if topic == 'club/status/message':
+            self.set_club_status(self.last_state.get('club/status', b'\x00'), payload)
+
 
     def preset(self, topic, payload):
 
@@ -464,9 +455,6 @@ class MQTTLogicer(helpers.MQTT_Client):
             logging.debug('set club status')
             # publish to irc topic ?
 
-            self.status_state=state;
-            self.status_message=message;
-
             if state != b'\x00':
                 self.mqtt_client.publish('rgb/bell', b'\x00\xff\x00' * 4, retain=True)
                 status = 'open'
@@ -480,14 +468,14 @@ class MQTTLogicer(helpers.MQTT_Client):
             # forward to webserver (for spaceapi)
             logging.debug('setting spaceapi open status')
             try:
-                urllib.request.urlopen(
+                requests.post(
                         'https://api.koeln.ccc.de/newstate',
                         timeout=5,
-                        data='password={secret}&state={state}&message={message}'.format(
-                                secret  = config.spaceapi_password,
-                                state   = status,
-                                message = ( message.decode("utf-8") if isinstance(message, bytes) else message )
-                            ).encode()
+                        data={
+                            "password"  : config.spaceapi_password,
+                            "state"     : status,
+                            "message"   : ( message.decode("utf-8") if isinstance(message, bytes) else message )
+                        }
                     )
             except Exception as e:
                 logging.warning('connection to webserver/spaceapi failed: {}'.format(repr(e)))
