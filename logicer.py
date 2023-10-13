@@ -27,7 +27,7 @@ import config
 import helpers
 
 
-_LastStateEntry = namedtuple('_LastStateEnry', ['value', 'time'])
+_LastStateEntry = namedtuple('_LastStateEntry', ['value', 'time'])
 
 class MQTTLogicer(helpers.MQTT_Client):
     """
