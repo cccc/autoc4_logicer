@@ -28,6 +28,7 @@ import helpers
 
 
 _LastStateEntry = namedtuple('_LastStateEntry', ['value', 'time'])
+NULL_STATE = _LastStateEntry(b'', 0)
 
 class MQTTLogicer(helpers.MQTT_Client):
     """
@@ -365,9 +366,9 @@ class MQTTLogicer(helpers.MQTT_Client):
                 self.mqtt_client.publish(t, p, retain=True)
 
         if topic == 'club/status':
-            self.set_club_status(payload, self.last_state.get('club/status/message', ''))
+            self.set_club_status(payload, self.last_state.get('club/status/message', NULL_STATE).value)
         if topic == 'club/status/message':
-            self.set_club_status(self.last_state.get('club/status', b'\x00'), payload)
+            self.set_club_status(self.last_state.get('club/status', _LastStateEntry(b'\x00', 0)).value, payload)
 
 
     def preset(self, topic, payload):
