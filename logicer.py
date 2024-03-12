@@ -183,9 +183,10 @@ class MQTTLogicer(helpers.MQTT_Client):
         entry in `last_state`)
         """
 
-        if topic == 'schalter/wohnzimmer/rechts':
-            logging.debug('setting club status')
-            self.mqtt_client.publish('club/status', value, retain=True)
+        # legacy, new switch now
+        #if topic == 'schalter/wohnzimmer/rechts':
+        #    logging.debug('setting club status')
+        #    self.mqtt_client.publish('club/status', value, retain=True)
 
 
     def value_changed(self, topic, new_value):
@@ -194,9 +195,27 @@ class MQTTLogicer(helpers.MQTT_Client):
         stored in `last_state`.
         """
 
-        if topic == 'schalter/wohnzimmer/rechts':
+        # legacy, new switch now
+        #if topic == 'schalter/wohnzimmer/rechts':
+        #    logging.debug('toggling club status')
+        #    self.mqtt_client.publish('club/status', new_value, retain=True)
+
+        if topic == 'schalter/gate/1' and new_value == b'\x00':
+            now = time.time()
+            timeout = now - self.last_state[topic].time
+            if timeout > 5:
+                logging.debug('sending force shutdown')
+                self.mqtt_client.publish('club/shutdown', b'\x44')
+            else:
+                logging.debug('sending shutdown')
+                self.mqtt_client.publish('club/shutdown', b'')
+
+        if topic == 'schalter/gate/2' and new_value == b'\x00':
             logging.debug('toggling club status')
-            self.mqtt_client.publish('club/status', new_value, retain=True)
+            if self.last_state['club/status'].value == b'\x01':
+                self.mqtt_client.publish('club/status', b'\x00', retain=True)
+            else:
+                self.mqtt_client.publish('club/status', b'\x01', retain=True)
 
         if topic == 'schalter/wohnzimmer/links':
             logging.debug('toggling wohnzimmer')
