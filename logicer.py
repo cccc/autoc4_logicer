@@ -136,22 +136,23 @@ class MQTTLogicer(helpers.MQTT_Client):
     last_event = None
 
     subscribe_topics = [
-            ('schalter/+/+',        0),
-            ('licht/+/+',           0),
-            ('relais/+/+',          0),
-            ('led/+/+',             0),
-            ('licht/+',             0),
-            ('screen/+/+',          0),
-            ('fenster/+/+',         0),
-            ('dmx/+/+',             0),
-            ('dmx/+',               0),
-            ('preset/+/+',          0),
-            ('club/status',         0),
-            ('club/status/message', 0),
-            ('club/shutdown',       0),
-            ('club/gate',           0),
-            ('club/bell',           0),
-            ('heartbeat/+',         0),
+            ('schalter/+/+',             0),
+            ('licht/+/+',                0),
+            ('relais/+/+',               0),
+            ('led/+/+',                  0),
+            ('licht/+',                  0),
+            ('screen/+/+',               0),
+            ('fenster/+/+',              0),
+            ('dmx/+/+',                  0),
+            ('dmx/+',                    0),
+            ('preset/+/+',               0),
+            ('beamer/plenar/lamp_state', 0),
+            ('club/status',              0),
+            ('club/status/message',      0),
+            ('club/shutdown',            0),
+            ('club/gate',                0),
+            ('club/bell',                0),
+            ('heartbeat/+',              0),
             #('temp/+/+',     0),
         ]
 
@@ -287,6 +288,11 @@ class MQTTLogicer(helpers.MQTT_Client):
 
             else:
                 logging.debug('bell off')
+
+        if topic == 'beamer/plenar/lamp_state' and new_value == b'\x01':
+            logging.debug('beamer turned on, forcing dmx relay on')
+            # atem video switcher is currently (temporarily) on this relay
+            self.mqtt_client.publish('relais/plenar/dmx', b'\x01', retain=True)
 
 
     def got_publish(self, topic, payload, retain):
