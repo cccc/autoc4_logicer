@@ -21,10 +21,10 @@ import helpers
 
 CHANNEL_TO_SERVER = {
     # topic_part: (mpd_server_name, mpd_server_port, mpd_topic_prefix)
-    'plenar': ('plenarsurface', 6600, 'mpd/plenar'),
-    'fnord': ('zaphod', 6600, 'mpd/fnord'),
+    'plenar': ('mpd-plenarsaal', 6600, 'mpd/plenar'),
+    'fnord': ('mpd-fnordcenter', 6600, 'mpd/fnord'),
     'wohnzimmer': ('mpd-wohnzimmer', 6600, 'mpd/wohnzimmer'),
-    'keller': ('eeepc', 6600, 'mpd/keller'),
+    'keller': ('mpd-keller', 6600, 'mpd/keller'),
 }
 
 ALLOWED_COMMANDS = {
