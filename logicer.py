@@ -384,6 +384,9 @@ class MQTTLogicer(helpers.MQTT_Client):
             for t, p in to_switch.items():
                 self.mqtt_client.publish(t, p, retain=True)
 
+            # set club status to closed
+            self.mqtt_client.publish('club/status', b'\x00', retain=True)
+
         if topic == 'club/status':
             self.set_club_status(payload, self.last_state.get('club/status/message', NULL_STATE).value)
         if topic == 'club/status/message':
