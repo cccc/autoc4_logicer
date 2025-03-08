@@ -1,0 +1,14 @@
+[Unit]
+Description=Busleiste Signage Daemon
+After=multi-user.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/c4/logicer
+ExecStart=/home/c4/pyfis/bin/python /home/c4/logicer/busleistung.py
+User=c4
+Group=c4
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -10,7 +10,17 @@ class MQTT_Client(threading.Thread):
     heartbeat_topic_prefix = 'heartbeat/'
     subscribe_topics = []
 
-    def __init__(self, clientId=None, mqtt_host='127.0.0.1', mqtt_port=1883, keepalive=60, heartbeat=False, *args, **kwargs):
+    def __init__(
+        self,
+        clientId = None,
+        mqtt_host = '127.0.0.1',
+        mqtt_port = 1883,
+        keepalive = 60,
+        heartbeat = False,
+        heartbeat_blank = False,
+        *args,
+        **kwargs,
+    ):
         super(MQTT_Client, self).__init__(*args, **kwargs)
 
         self.clientId = clientId
@@ -19,12 +29,13 @@ class MQTT_Client(threading.Thread):
         self.keepalive = keepalive
 
         self.heartbeat = heartbeat
+        self.heartbeat_blank = heartbeat_blank
         self.heartbeat_topic = self.heartbeat_topic_prefix + self.clientId
 
         if heartbeat:
             self.willQos = 2
             self.willTopic = self.heartbeat_topic
-            self.willMessage = b'\x00'
+            self.willMessage = b'' if self.heartbeat_blank else b'\x00'
             self.willRetain = True
         else:
             self.willQos = None
