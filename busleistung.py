@@ -1,10 +1,7 @@
 #!/usr/bin/python3
 
 """
-A MQTT <-> MPD bridge.
-
-Runs an idling thread waiting for events for every configured MPD server and
-another thread subscribed to the MQTT server, listening for commands.
+MQTT client controlling the Busleiste display.
 """
 
 import argparse
