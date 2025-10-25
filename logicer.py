@@ -76,6 +76,9 @@ class MQTTLogicer(helpers.MQTT_Client):
     screens = [
         'screen/wohnzimmer/infoscreen',
     ]
+    tasmoten = [
+        'tasmota/plenar/hdmi-matrix',
+    ]
     alle_lichter = fnordcenter_lichter + keller_lichter + wohnzimmer_lichter + plenarsaal_lichter + powers + sockets + leds_keller + screens
     exit_light = 'licht/wohnzimmer/tuer'
 
@@ -391,6 +394,9 @@ class MQTTLogicer(helpers.MQTT_Client):
             # publish licht messages
             for t, p in to_switch.items():
                 self.mqtt_client.publish(t, p, retain=True)
+
+            for t in self.tasmoten:
+                self.mqtt_client.publish(t + '/cmnd/power', 'off', retain=False) # yes, no retain here
 
             # set club status to closed
             self.mqtt_client.publish('club/status', b'\x00', retain=True)
