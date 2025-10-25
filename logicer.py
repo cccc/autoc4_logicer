@@ -74,7 +74,7 @@ class MQTTLogicer(helpers.MQTT_Client):
         'relais/fnord/audio',
     ]
     screens = [
-        'screen/wohnzimmer/infoscreen'
+        'screen/wohnzimmer/infoscreen',
     ]
     alle_lichter = fnordcenter_lichter + keller_lichter + wohnzimmer_lichter + plenarsaal_lichter + powers + sockets + leds_keller + screens
     exit_light = 'licht/wohnzimmer/tuer'
