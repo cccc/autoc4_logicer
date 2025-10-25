@@ -208,7 +208,7 @@ class MQTT_Skynet_Thread(threading.Thread):
             try:
                 self.poll_data()
 
-            except (urllib.error.URLError, TimeoutError) as e:
+            except (urllib.error.URLError, TimeoutError, ConnectionResetError) as e:
                 logging.info('error fetching data: {}'.format(e.__class__.__name__))
                 time.sleep(60)
                 continue
