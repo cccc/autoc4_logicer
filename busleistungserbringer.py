@@ -1,3 +1,7 @@
+"""
+Contains logic modules implementing different modes for Busleiste
+"""
+
 import json
 import logging
 import time
