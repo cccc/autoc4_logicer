@@ -135,6 +135,8 @@ class MQTTLogicer(helpers.MQTT_Client):
     last_state = None
     last_event = None
 
+    space_api_status_dirty = False
+
     subscribe_topics = [
             ('schalter/+/+',             0),
             ('licht/+/+',                0),
@@ -392,6 +394,8 @@ class MQTTLogicer(helpers.MQTT_Client):
 
             # set club status to closed
             self.mqtt_client.publish('club/status', b'\x00', retain=True)
+            # reset club status message
+            self.mqtt_client.publish('club/status/message', '', retain=True)
 
         if topic == 'club/status':
             self.set_club_status(payload, self.last_state.get('club/status/message', NULL_STATE).value)
@@ -495,7 +499,7 @@ class MQTTLogicer(helpers.MQTT_Client):
             #Popen(['/usr/bin/python2.7', '/home/autoc4/logicer/irc_topicer.py', status])
 
             # forward to webserver (for spaceapi)
-            logging.debug('setting spaceapi open status')
+            logging.debug('setting spaceapi open status: {} with message {}'.format(repr(status), repr(message)))
             try:
                 requests.post(
                         'https://api.koeln.ccc.de/newstate',
@@ -506,6 +510,28 @@ class MQTTLogicer(helpers.MQTT_Client):
                             "message"   : ( message.decode("utf-8") if isinstance(message, bytes) else message )
                         }
                     )
+                self.space_api_status_dirty = False
+            except Exception as e:
+                logging.warning('connection to webserver/spaceapi failed: {}'.format(repr(e)))
+                self.space_api_status_dirty = True
+
+    def poll_space_api_dirty(self):
+        """ Called periodically by the time thread """
+        if self.space_api_status_dirty:
+            logging.debug('spaceapi status dirty, trying to reset')
+            newstate = self.last_state.get('club/status', _LastStateEntry(b'\x00', 0)).value
+            newmessage = self.last_state.get('club/status/message', NULL_STATE).value
+            try:
+                requests.post(
+                        'https://api.koeln.ccc.de/newstate',
+                        timeout=5,
+                        data={
+                            "password"  : config.spaceapi_password,
+                            "state"     : newstate,
+                            "message"   : ( newmessage.decode("utf-8") if isinstance(newmessage, bytes) else newmessage )
+                        }
+                    )
+                self.space_api_status_dirty = False
             except Exception as e:
                 logging.warning('connection to webserver/spaceapi failed: {}'.format(repr(e)))
 
@@ -539,6 +565,7 @@ class MQTT_Time_Thread(threading.Thread):
 
         while True:
             self.publish_time()
+            self.logicer.poll_space_api_dirty()
             time.sleep(self.interval)
 
     def publish_time(self):
