@@ -66,8 +66,8 @@ class MQTTLogicer(helpers.MQTT_Client):
         'power/wohnzimmer/kitchenlight',
     ]
     sockets = [
-        'socket/wohnzimmer/screen/a',
-        'socket/wohnzimmer/screen/b',
+        'licht/wohnzimmer/stehlampen',
+        'licht/wohnzimmer/wandlampe',
         'relais/plenar/amp',
         'relais/plenar/dmx',
         'relais/fnord/dmx',
@@ -93,7 +93,7 @@ class MQTTLogicer(helpers.MQTT_Client):
     musiken = [
         'mpd/plenar',
         'mpd/fnord',
-        'mpd/baellebad',
+        'mpd/wohnzimmer',
         'mpd/keller',
     ]
 
