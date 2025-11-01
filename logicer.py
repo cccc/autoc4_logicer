@@ -78,6 +78,7 @@ class MQTTLogicer(helpers.MQTT_Client):
     ]
     tasmoten = [
         'tasmota/plenar/hdmi-matrix',
+        'tasmota/plenar/plenarsaal-pa',
     ]
     alle_lichter = fnordcenter_lichter + keller_lichter + wohnzimmer_lichter + plenarsaal_lichter + powers + sockets + leds_keller + screens
     exit_light = 'licht/wohnzimmer/tuer'
